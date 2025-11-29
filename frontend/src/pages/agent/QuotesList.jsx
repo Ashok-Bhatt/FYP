@@ -356,6 +356,7 @@ const QuotesList = () => {
                         <h1>VoyageGen</h1>
                         <div class="subtitle">Premium Travel Quotation</div>
                         <div class="quote-id">Quote #${quote._id.slice(-6)}</div>
+                        <div style="margin-top: 15px; font-size: 16px; opacity: 0.9;">Prepared for: ${quote.requirementId?.contactInfo?.name || 'Valued Traveler'}</div>
                     </div>
 
                     <div class="content">
