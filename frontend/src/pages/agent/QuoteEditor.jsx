@@ -58,7 +58,10 @@ const QuoteEditor = () => {
         <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-serif font-bold">Edit Quote</h1>
+                <div>
+                    <h1 className="text-3xl font-serif font-bold">Edit Quote</h1>
+                    <p className="text-gray-400 mt-1">For: <span className="text-emerald-400 font-bold">{quote.requirementId?.contactInfo?.name}</span></p>
+                </div>
                 <div className="flex gap-4">
                     <button
                         onClick={handleSave}

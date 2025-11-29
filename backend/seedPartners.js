@@ -173,7 +173,6 @@ const partnersData = [
         ]
     },
 
-    // Dubai
     {
         companyName: "Burj Al Arab Jumeirah",
         destinations: ["Dubai", "UAE"],
