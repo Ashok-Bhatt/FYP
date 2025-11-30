@@ -1,0 +1,17 @@
+src/pages/agent/QuoteEditor.tsx(1,38): error TS6133: 'ChangeEvent' is declared but its value is never read.
+src/pages/agent/QuoteEditor.tsx(5,29): error TS6133: 'FaTrash' is declared but its value is never read.
+src/pages/agent/QuoteEditor.tsx(41,30): error TS2339: Property 'nights' does not exist on type '{ name: string; city: string; roomType: string; nights: number; unitPrice: number; qty: number; total: number; } | { type: string; days: number; unitPrice: number; total: number; } | { name: string; unitPrice: number; qty: number; total: number; }'.
+  Property 'nights' does not exist on type '{ type: string; days: number; unitPrice: number; total: number; }'.
+src/pages/agent/QuoteEditor.tsx(41,45): error TS2339: Property 'days' does not exist on type '{ name: string; city: string; roomType: string; nights: number; unitPrice: number; qty: number; total: number; } | { type: string; days: number; unitPrice: number; total: number; } | { name: string; unitPrice: number; qty: number; total: number; }'.
+  Property 'days' does not exist on type '{ name: string; city: string; roomType: string; nights: number; unitPrice: number; qty: number; total: number; }'.
+src/pages/agent/QuoteEditor.tsx(41,58): error TS2339: Property 'qty' does not exist on type '{ name: string; city: string; roomType: string; nights: number; unitPrice: number; qty: number; total: number; } | { type: string; days: number; unitPrice: number; total: number; } | { name: string; unitPrice: number; qty: number; total: number; }'.
+  Property 'qty' does not exist on type '{ type: string; days: number; unitPrice: number; total: number; }'.
+src/pages/agent/QuotesList.tsx(656,73): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'SetStateAction<string | null>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<string | null>'.
+src/pages/agent/RequirementDetails.tsx(5,20): error TS6133: 'FaHotel' is declared but its value is never read.
+src/pages/agent/RequirementDetails.tsx(5,29): error TS6133: 'FaCar' is declared but its value is never read.
+src/pages/agent/RequirementDetails.tsx(5,36): error TS6133: 'FaUmbrellaBeach' is declared but its value is never read.
+src/pages/agent/RequirementDetails.tsx(5,119): error TS6133: 'FaMoneyBillWave' is declared but its value is never read.
+src/pages/agent/RequirementDetails.tsx(161,26): error TS18048: 'requirement.preferences' is possibly 'undefined'.
+src/pages/agent/RequirementDetails.tsx(284,86): error TS18048: 'partner.destinations' is possibly 'undefined'.
+src/pages/agent/RequirementDetails.tsx(362,61): error TS18048: 'viewingPartner.destinations' is possibly 'undefined'.
