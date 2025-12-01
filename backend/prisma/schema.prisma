@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums based on Mongoose schemas
+enum Role {
+  AGENT
+  PARTNER
+  ADMIN
+  USER
+}
+
+enum PartnerType {
+  DMC
+  Hotel
+  CabProvider
+  Mixed
+}
+
+enum RequirementStatus {
+  NEW
+  IN_PROGRESS
+  QUOTES_READY
+  SENT_TO_USER
+  COMPLETED
+}
+
+enum QuoteStatus {
+  DRAFT
+  READY
+  SENT_TO_USER
+}
+
+// Models
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String
+  role        Role     @default(AGENT)
+  companyName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  destinations UserDestination[]
+  partnerProfile PartnerProfile?
+  
+  // Inventory
+  hotels      PartnerHotel[]
+  transports  PartnerTransport[]
+  activities  PartnerActivity[]
+
+  // Quotes
+  quotesAsPartner Quote[] @relation("PartnerQuotes")
+  quotesAsAgent   Quote[] @relation("AgentQuotes")
+}
+
+model UserDestination {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+  city   String
+}
+
+model PartnerProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  user           User     @relation(fields: [userId], references: [id])
+  companyName    String
+  type           PartnerType @default(DMC)
+  budgetMin      Float?
+  budgetMax      Float?
+  rating         Float    @default(4.5)
+  tripsHandled   Int      @default(0)
+  description    String?
+  startingPrice  Float?
+  reviews        Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  destinations    PartnerDestination[]
+  specializations PartnerSpecialization[]
+  images          PartnerImage[]
+  amenities       PartnerAmenity[]
+  sightSeeing     PartnerSightSeeing[]
+}
+
+model PartnerDestination {
+  id               Int            @id @default(autoincrement())
+  partnerProfileId Int
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id])
+  name             String
+}
+
+model PartnerSpecialization {
+  id               Int            @id @default(autoincrement())
+  partnerProfileId Int
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id])
+  name             String
+}
+
+model PartnerImage {
+  id               Int            @id @default(autoincrement())
+  partnerProfileId Int
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id])
+  url              String
+}
+
+model Amenity {
+  id       Int              @id @default(autoincrement())
+  name     String           @unique
+  partners PartnerAmenity[]
+}
+
+model PartnerAmenity {
+  id               Int            @id @default(autoincrement())
+  partnerProfileId Int
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id])
+  amenityId        Int
+  amenity          Amenity        @relation(fields: [amenityId], references: [id])
+}
+
+model PartnerSightSeeing {
+  id               Int            @id @default(autoincrement())
+  partnerProfileId Int
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id])
+  name             String
+}
+
+// Inventory
+
+model PartnerHotel {
+  id         Int      @id @default(autoincrement())
+  partnerId  Int
+  partner    User     @relation(fields: [partnerId], references: [id])
+  name       String
+  city       String
+  starRating Int?
+  
+  amenities PartnerHotelAmenity[]
+  roomTypes PartnerHotelRoomType[]
+  photos    PartnerHotelPhoto[]
+}
+
+model PartnerHotelAmenity {
+  id       Int          @id @default(autoincrement())
+  hotelId  Int
+  hotel    PartnerHotel @relation(fields: [hotelId], references: [id])
+  name     String
+}
+
+model PartnerHotelRoomType {
+  id           Int          @id @default(autoincrement())
+  hotelId      Int
+  hotel        PartnerHotel @relation(fields: [hotelId], references: [id])
+  name         String
+  price        Float
+  maxOccupancy Int
+}
+
+model PartnerHotelPhoto {
+  id      Int          @id @default(autoincrement())
+  hotelId Int
+  hotel   PartnerHotel @relation(fields: [hotelId], references: [id])
+  url     String
+}
+
+model PartnerTransport {
+  id        Int    @id @default(autoincrement())
+  partnerId Int
+  partner   User   @relation(fields: [partnerId], references: [id])
+  type      String
+  price     Float
+  maxPax    Int
+  city      String
+}
+
+model PartnerActivity {
+  id          Int     @id @default(autoincrement())
+  partnerId   Int
+  partner     User    @relation(fields: [partnerId], references: [id])
+  name        String
+  city        String
+  price       Float
+  description String?
+}
+
+// Requirement
+
+model Requirement {
+  id          Int               @id @default(autoincrement())
+  destination String
+  tripType    String
+  budget      Float
+  startDate   DateTime?
+  duration    Int?
+  adults      Int               @default(1)
+  children    Int               @default(0)
+  hotelStar   Int?
+  status      RequirementStatus @default(NEW)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  contactId   Int?
+  contact     Contact?          @relation(fields: [contactId], references: [id])
+  
+  preferences RequirementPreference[]
+  quotes      Quote[]
+}
+
+model Contact {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String
+  phone        String
+  whatsapp     String?
+  requirements Requirement[]
+}
+
+model RequirementPreference {
+  id            Int         @id @default(autoincrement())
+  requirementId Int
+  requirement   Requirement @relation(fields: [requirementId], references: [id])
+  name          String
+}
+
+// Quote
+
+model Quote {
+  id            Int         @id @default(autoincrement())
+  requirementId Int
+  requirement   Requirement @relation(fields: [requirementId], references: [id])
+  partnerId     Int
+  partner       User        @relation("PartnerQuotes", fields: [partnerId], references: [id])
+  agentId       Int
+  agent         User        @relation("AgentQuotes", fields: [agentId], references: [id])
+  title         String?
+  costs         Json?       // { net, margin, final, perHead }
+  status        QuoteStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  hotels     QuoteHotel[]
+  transport  QuoteTransport[]
+  activities QuoteActivity[]
+}
+
+model QuoteHotel {
+  id        Int    @id @default(autoincrement())
+  quoteId   Int
+  quote     Quote  @relation(fields: [quoteId], references: [id])
+  name      String
+  city      String
+  roomType  String
+  nights    Int
+  unitPrice Float
+  qty       Int
+  total     Float
+}
+
+model QuoteTransport {
+  id        Int    @id @default(autoincrement())
+  quoteId   Int
+  quote     Quote  @relation(fields: [quoteId], references: [id])
+  type      String
+  days      Int
+  unitPrice Float
+  total     Float
+}
+
+model QuoteActivity {
+  id        Int    @id @default(autoincrement())
+  quoteId   Int
+  quote     Quote  @relation(fields: [quoteId], references: [id])
+  name      String
+  unitPrice Float
+  qty       Int
+  total     Float
+}
