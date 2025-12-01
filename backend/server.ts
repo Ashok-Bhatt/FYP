@@ -1,7 +1,7 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import prisma from './db';
 
 // Routes
 import authRoutes from './routes/authRoutes';
@@ -18,14 +18,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/voyagegen')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB Connection Error:', err));
+// Test Prisma Connection
+prisma.$connect()
+    .then(() => console.log('✅ PostgreSQL Connected (Prisma)'))
+    .catch(err => console.error('❌ PostgreSQL Connection Error:', err));
 
 // Basic Route
 app.get('/', (req, res) => {
-    res.send('VoyageGen API is running...');
+    res.send('VoyageGen API is running with PostgreSQL...');
 });
 
 // Routes
@@ -33,6 +33,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/quotes', quoteRoutes);
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

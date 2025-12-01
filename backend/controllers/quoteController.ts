@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import Quote, { IQuote } from '../models/Quote';
-import Requirement from '../models/Requirement';
-import PartnerProfile from '../models/PartnerProfile';
-import { QuoteSection } from '../../shared/types';
+import { quoteRepo, requirementRepo } from '../db';
+import prisma from '../db';
 import { handleError } from '../utils/errorHandler';
 
 // @desc    Auto-generate quotes for selected partners
@@ -12,29 +10,34 @@ export const generateQuotes = async (req: Request, res: Response) => {
     const { requirementId, partnerIds } = req.body;
 
     try {
-        const requirement = await Requirement.findById(requirementId);
+        const requirement = await requirementRepo.findById(parseInt(requirementId));
         if (!requirement) {
             res.status(404).json({ message: 'Requirement not found' });
             return;
         }
 
-        const quotes: IQuote[] = [];
+        const quotes: any[] = [];
 
         for (const partnerId of partnerIds) {
-            // Fetch partner profile instead of inventory
-            const partner = await PartnerProfile.findOne({ userId: partnerId }).populate('userId', 'name email');
-            if (!partner) continue;
+            // Fetch partner profile
+            const partner = await prisma.partnerProfile.findFirst({
+                where: { userId: parseInt(partnerId) },
+                include: {
+                    user: { select: { id: true, name: true, email: true } },
+                    destinations: true,
+                    sightSeeing: true,
+                },
+            });
 
-            // Build quote sections using partner data
-            const quoteSections: QuoteSection = {
-                hotels: [],
-                transport: [],
-                activities: [],
-            };
+            if (!partner) continue;
 
             let netCost = 0;
             const duration = requirement.duration || 6;
-            const adults = requirement.pax?.adults || 2;
+            const adults = requirement.adults || 2;
+
+            const hotelData: any[] = [];
+            const transportData: any[] = [];
+            const activityData: any[] = [];
 
             // 1. Add Hotel based on partner's starting price
             if (partner.type === 'Hotel' || partner.type === 'DMC' || partner.type === 'Mixed') {
@@ -42,9 +45,9 @@ export const generateQuotes = async (req: Request, res: Response) => {
                 const nights = duration - 1;
                 const roomCost = hotelPrice * nights;
 
-                quoteSections.hotels.push({
+                hotelData.push({
                     name: partner.companyName,
-                    city: partner.destinations?.[0] || requirement.destination || '',
+                    city: partner.destinations?.[0]?.name || requirement.destination || '',
                     roomType: 'Deluxe Room',
                     nights: nights,
                     unitPrice: hotelPrice,
@@ -60,7 +63,7 @@ export const generateQuotes = async (req: Request, res: Response) => {
                 const days = duration;
                 const transportCost = transportPrice * days;
 
-                quoteSections.transport.push({
+                transportData.push({
                     type: 'Private Sedan',
                     days: days,
                     unitPrice: transportPrice,
@@ -72,12 +75,12 @@ export const generateQuotes = async (req: Request, res: Response) => {
             // 3. Add Activities based on sightseeing
             if (partner.sightSeeing && partner.sightSeeing.length > 0) {
                 const activitiesToAdd = partner.sightSeeing.slice(0, 3);
-                activitiesToAdd.forEach((sight: string, index: number) => {
-                    const activityPrice = 1500 + (index * 500); // Varying prices
+                activitiesToAdd.forEach((sight, index) => {
+                    const activityPrice = 1500 + (index * 500);
                     const activityCost = activityPrice * adults;
 
-                    quoteSections.activities.push({
-                        name: sight,
+                    activityData.push({
+                        name: sight.name,
                         unitPrice: activityPrice,
                         qty: adults,
                         total: activityCost,
@@ -87,27 +90,28 @@ export const generateQuotes = async (req: Request, res: Response) => {
             }
 
             // Create Quote Record
-            const quote = await Quote.create({
-                requirementId,
-                partnerId: partner.userId._id,
-                agentId: req.user!._id,
+            const quote = await quoteRepo.create({
+                requirement: { connect: { id: parseInt(requirementId) } },
+                partner: { connect: { id: partner.userId } },
+                agent: { connect: { id: req.user!.id } },
                 title: `${requirement.destination} Trip - ${requirement.tripType}`,
-                sections: quoteSections,
                 costs: {
                     net: netCost,
-                    margin: 10, // Default 10%
+                    margin: 10,
                     final: netCost * 1.1,
                     perHead: (netCost * 1.1) / adults,
                 },
                 status: 'DRAFT',
+                hotels: hotelData.length > 0 ? { create: hotelData } : undefined,
+                transport: transportData.length > 0 ? { create: transportData } : undefined,
+                activities: activityData.length > 0 ? { create: activityData } : undefined,
             });
 
             quotes.push(quote);
         }
 
         // Update Requirement Status to QUOTES_READY
-        requirement.status = 'QUOTES_READY';
-        await requirement.save();
+        await requirementRepo.updateStatus(parseInt(requirementId), 'QUOTES_READY');
 
         res.status(201).json(quotes);
     } catch (error: unknown) {
@@ -120,10 +124,31 @@ export const generateQuotes = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const getQuotes = async (req: Request, res: Response) => {
     try {
-        const quotes = await Quote.find({})
-            .populate('requirementId', 'destination tripType budget startDate duration')
-            .populate('agentId', 'name email')
-            .sort({ createdAt: -1 });
+        const quotes = await prisma.quote.findMany({
+            include: {
+                requirement: {
+                    select: {
+                        id: true,
+                        destination: true,
+                        tripType: true,
+                        budget: true,
+                        startDate: true,
+                        duration: true,
+                    },
+                },
+                agent: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                hotels: true,
+                transport: true,
+                activities: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
 
         res.json(quotes);
     } catch (error: unknown) {
@@ -136,7 +161,7 @@ export const getQuotes = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const getQuotesByRequirement = async (req: Request, res: Response) => {
     try {
-        const quotes = await Quote.find({ requirementId: req.params.id }).populate('partnerId', 'name companyName');
+        const quotes = await quoteRepo.findByRequirementId(parseInt(req.params.id));
         res.json(quotes);
     } catch (error: unknown) {
         handleError(res, error);
@@ -148,7 +173,7 @@ export const getQuotesByRequirement = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const getQuoteById = async (req: Request, res: Response) => {
     try {
-        const quote = await Quote.findById(req.params.id).populate('partnerId', 'name companyName');
+        const quote = await quoteRepo.findById(parseInt(req.params.id));
         if (quote) {
             res.json(quote);
         } else {
@@ -164,19 +189,45 @@ export const getQuoteById = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const updateQuote = async (req: Request, res: Response) => {
     try {
-        const quote = await Quote.findById(req.params.id);
-        if (!quote) {
-            res.status(404).json({ message: 'Quote not found' });
-            return;
+        const { sections, costs, status } = req.body;
+        const quoteId = parseInt(req.params.id);
+
+        const updateData: any = {};
+        if (costs) updateData.costs = costs;
+        if (status) updateData.status = status;
+
+        // Update sections if provided
+        if (sections) {
+            if (sections.hotels) {
+                updateData.hotels = {
+                    deleteMany: {},
+                    create: sections.hotels,
+                };
+            }
+            if (sections.transport) {
+                updateData.transport = {
+                    deleteMany: {},
+                    create: sections.transport,
+                };
+            }
+            if (sections.activities) {
+                updateData.activities = {
+                    deleteMany: {},
+                    create: sections.activities,
+                };
+            }
         }
 
-        // Update fields
-        const { sections, costs, status } = req.body;
-        if (sections) quote.sections = sections;
-        if (costs) quote.costs = costs;
-        if (status) quote.status = status;
+        const quote = await prisma.quote.update({
+            where: { id: quoteId },
+            data: updateData,
+            include: {
+                hotels: true,
+                transport: true,
+                activities: true,
+            },
+        });
 
-        await quote.save();
         res.json(quote);
     } catch (error: unknown) {
         handleError(res, error);
@@ -188,13 +239,7 @@ export const updateQuote = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const deleteQuote = async (req: Request, res: Response) => {
     try {
-        const quote = await Quote.findById(req.params.id);
-        if (!quote) {
-            res.status(404).json({ message: 'Quote not found' });
-            return;
-        }
-
-        await Quote.findByIdAndDelete(req.params.id);
+        await prisma.quote.delete({ where: { id: parseInt(req.params.id) } });
         res.json({ message: 'Quote deleted successfully' });
     } catch (error: unknown) {
         handleError(res, error, 'Error deleting quote');

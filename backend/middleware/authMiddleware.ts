@@ -1,18 +1,19 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import User, { IUser } from '../models/User';
+import { userRepo } from '../db';
+import { User } from '@prisma/client';
 
 // Extend Express Request interface to include user
 declare global {
     namespace Express {
         interface Request {
-            user?: IUser;
+            user?: User;
         }
     }
 }
 
 interface DecodedToken {
-    id: string;
+    id: number;
     iat: number;
     exp: number;
 }
@@ -29,7 +30,16 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
 
-            req.user = await User.findById(decoded.id).select('-password') as IUser;
+            const user = await userRepo.findById(decoded.id);
+
+            if (!user) {
+                res.status(401).json({ message: 'User not found' });
+                return;
+            }
+
+            // Remove password from user object
+            const { password, ...userWithoutPassword } = user;
+            req.user = userWithoutPassword as User;
 
             next();
         } catch (error) {

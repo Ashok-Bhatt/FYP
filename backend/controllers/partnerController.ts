@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import PartnerProfile from '../models/PartnerProfile';
-import { PartnerHotel, PartnerTransport, PartnerActivity } from '../models/PartnerInventory';
+import { partnerRepo, inventoryRepo } from '../db';
+import prisma from '../db';
 import { handleError } from '../utils/errorHandler';
 
 // @desc    Get current partner profile
@@ -8,7 +8,7 @@ import { handleError } from '../utils/errorHandler';
 // @access  Private (Partner)
 export const getMyProfile = async (req: Request, res: Response) => {
     try {
-        const profile = await PartnerProfile.findOne({ userId: req.user!._id });
+        const profile = await partnerRepo.findByUserId(req.user!.id);
         res.json(profile);
     } catch (error: unknown) {
         handleError(res, error);
@@ -22,31 +22,58 @@ export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { companyName, destinations, type, specializations, budgetRange } = req.body;
 
-        let profile = await PartnerProfile.findOne({ userId: req.user!._id });
+        const existingProfile = await partnerRepo.findByUserId(req.user!.id);
 
-        if (profile) {
-            if (companyName) profile.companyName = companyName;
-            if (destinations) profile.destinations = destinations;
-            if (type) profile.type = type;
-            if (specializations) profile.specializations = specializations;
-            if (budgetRange) profile.budgetRange = budgetRange;
-
-            await profile.save();
+        if (existingProfile) {
+            // Update existing profile
+            const updated = await prisma.partnerProfile.update({
+                where: { id: existingProfile.id },
+                data: {
+                    companyName: companyName || existingProfile.companyName,
+                    type: type || existingProfile.type,
+                    budgetMin: budgetRange?.min ?? existingProfile.budgetMin,
+                    budgetMax: budgetRange?.max ?? existingProfile.budgetMax,
+                    // Update destinations if provided
+                    ...(destinations && {
+                        destinations: {
+                            deleteMany: {},
+                            create: destinations.map((dest: string) => ({ name: dest })),
+                        },
+                    }),
+                    // Update specializations if provided
+                    ...(specializations && {
+                        specializations: {
+                            deleteMany: {},
+                            create: specializations.map((spec: string) => ({ name: spec })),
+                        },
+                    }),
+                },
+                include: {
+                    destinations: true,
+                    specializations: true,
+                },
+            });
+            res.json(updated);
         } else {
-            profile = await PartnerProfile.create({
-                userId: req.user!._id,
+            // Create new profile
+            const profile = await partnerRepo.create({
+                user: { connect: { id: req.user!.id } },
                 companyName,
-                destinations,
-                type,
-                specializations,
-                budgetRange,
-                rating: 0,
+                type: type || 'DMC',
+                budgetMin: budgetRange?.min || null,
+                budgetMax: budgetRange?.max || null,
+                rating: 4.5,
                 tripsHandled: 0,
                 reviews: 0,
+                destinations: destinations && destinations.length > 0
+                    ? { create: destinations.map((dest: string) => ({ name: dest })) }
+                    : undefined,
+                specializations: specializations && specializations.length > 0
+                    ? { create: specializations.map((spec: string) => ({ name: spec })) }
+                    : undefined,
             });
+            res.json(profile);
         }
-
-        res.json(profile);
     } catch (error: unknown) {
         handleError(res, error);
     }
@@ -57,16 +84,51 @@ export const updateProfile = async (req: Request, res: Response) => {
 // @access  Private (Partner)
 export const addInventory = async (req: Request, res: Response) => {
     const { type } = req.params; // hotel, transport, activity
-    const data = { ...req.body, partnerId: req.user!._id };
+    const data = { ...req.body, partnerId: req.user!.id };
 
     try {
         let item;
         if (type === 'hotel') {
-            item = await PartnerHotel.create(data);
+            const { name, city, starRating, amenities, roomTypes, photos } = data;
+            item = await inventoryRepo.createHotel({
+                partner: { connect: { id: req.user!.id } },
+                name,
+                city,
+                starRating: starRating || null,
+                amenities: amenities && amenities.length > 0
+                    ? { create: amenities.map((a: string) => ({ name: a })) }
+                    : undefined,
+                roomTypes: roomTypes && roomTypes.length > 0
+                    ? {
+                        create: roomTypes.map((rt: any) => ({
+                            name: rt.name,
+                            price: rt.price,
+                            maxOccupancy: rt.maxOccupancy,
+                        }))
+                    }
+                    : undefined,
+                photos: photos && photos.length > 0
+                    ? { create: photos.map((url: string) => ({ url })) }
+                    : undefined,
+            });
         } else if (type === 'transport') {
-            item = await PartnerTransport.create(data);
+            const { type: transportType, price, maxPax, city } = data;
+            item = await inventoryRepo.createTransport({
+                partner: { connect: { id: req.user!.id } },
+                type: transportType,
+                price,
+                maxPax,
+                city,
+            });
         } else if (type === 'activity') {
-            item = await PartnerActivity.create(data);
+            const { name, city, price, description } = data;
+            item = await inventoryRepo.createActivity({
+                partner: { connect: { id: req.user!.id } },
+                name,
+                city,
+                price,
+                description: description || null,
+            });
         } else {
             res.status(400).json({ message: 'Invalid inventory type' });
             return;
@@ -84,33 +146,55 @@ export const filterPartners = async (req: Request, res: Response) => {
     const { destination, budget, type, hotelStar } = req.body;
 
     try {
-        const query: any = {};
+        const where: any = {};
 
         if (destination) {
-            query.destinations = { $in: [destination] };
+            where.destinations = {
+                some: {
+                    name: {
+                        contains: destination,
+                        mode: 'insensitive',
+                    },
+                },
+            };
         }
+
         if (type) {
-            query.type = type;
+            where.type = type;
         }
 
         if (budget) {
             const budgetNum = Number(budget);
-            query.$or = [
+            where.OR = [
                 {
-                    'budgetRange.min': { $lte: budgetNum },
-                    'budgetRange.max': { $gte: budgetNum }
+                    AND: [
+                        { budgetMin: { lte: budgetNum } },
+                        { budgetMax: { gte: budgetNum } },
+                    ],
                 },
-                { budgetRange: { $exists: false } },
-                { 'budgetRange.min': null },
-                { 'budgetRange.max': null }
+                { budgetMin: null },
+                { budgetMax: null },
             ];
         }
 
         if (hotelStar) {
-            query.rating = { $gte: Number(hotelStar) };
+            where.rating = { gte: Number(hotelStar) };
         }
 
-        const partners = await PartnerProfile.find(query).populate('userId', 'name email');
+        const partners = await prisma.partnerProfile.findMany({
+            where,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                destinations: true,
+            },
+        });
+
         res.json(partners);
     } catch (error: unknown) {
         handleError(res, error);

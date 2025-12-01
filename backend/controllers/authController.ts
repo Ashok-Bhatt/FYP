@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
+import { userRepo } from '../db';
 import jwt from 'jsonwebtoken';
 import { handleError } from '../utils/errorHandler';
+import bcrypt from 'bcryptjs';
 
 // Generate JWT
-const generateToken = (id: string) => {
+const generateToken = (id: number) => {
     return jwt.sign({ id }, process.env.JWT_SECRET as string, {
         expiresIn: '30d',
     });
@@ -22,29 +23,35 @@ export const registerUser = async (req: Request, res: Response) => {
             return;
         }
 
-        const userExists = await User.findOne({ email });
+        const userExists = await userRepo.findByEmail(email);
 
         if (userExists) {
             res.status(400).json({ message: 'User already exists' });
             return;
         }
 
-        const user = await User.create({
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const user = await userRepo.create({
             name,
             email,
-            password,
-            role,
-            companyName,
-            destinations,
+            password: hashedPassword,
+            role: role || 'AGENT',
+            companyName: companyName || null,
+            destinations: destinations && destinations.length > 0
+                ? { create: destinations.map((city: string) => ({ city })) }
+                : undefined,
         });
 
         if (user) {
             res.status(201).json({
-                _id: user._id,
+                id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken((user._id as unknown) as string),
+                token: generateToken(user.id),
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -61,15 +68,15 @@ export const authUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const user = await userRepo.findByEmail(email);
 
-        if (user && (await user.matchPassword(password))) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
-                _id: user._id,
+                id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken((user._id as unknown) as string),
+                token: generateToken(user.id),
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });
@@ -78,3 +85,4 @@ export const authUser = async (req: Request, res: Response) => {
         handleError(res, error, 'Login failed');
     }
 };
+
