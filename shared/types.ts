@@ -43,6 +43,17 @@ export interface Requirement {
     updatedAt?: string | Date;
 }
 
+// Itinerary Types
+export interface ItineraryDay {
+    day: number;
+    title: string;
+    highlight?: string;
+    activities: string[];
+    accommodation: string;
+    meals: string[];
+    tips?: string;
+}
+
 // Quote Types
 export interface QuoteSection {
     hotels: Array<{
@@ -84,6 +95,7 @@ export interface Quote {
     sections: QuoteSection;
     costs: QuoteCosts;
     status: 'DRAFT' | 'READY' | 'SENT_TO_USER';
+    itinerary?: ItineraryDay[];
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }

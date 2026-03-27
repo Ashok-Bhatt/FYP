@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { Quote as SharedQuote, QuoteSection, QuoteCosts } from '../../shared/types';
+import { Quote as SharedQuote, QuoteSection, QuoteCosts, ItineraryDay } from '../../shared/types';
 
 export interface IQuote extends Omit<SharedQuote, '_id' | 'requirementId' | 'partnerId' | 'agentId'>, Document {
     requirementId: mongoose.Types.ObjectId;
@@ -58,6 +58,15 @@ const quoteSchema = new Schema<IQuote>({
         enum: ['DRAFT', 'READY', 'SENT_TO_USER'],
         default: 'DRAFT',
     },
+    itinerary: [{
+        day: Number,
+        title: String,
+        highlight: String,
+        activities: [String],
+        accommodation: String,
+        meals: [String],
+        tips: String,
+    }],
 }, {
     timestamps: true,
 });
