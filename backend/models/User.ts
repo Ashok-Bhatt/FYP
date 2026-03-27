@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { User as SharedUser } from '../../shared/types';
 
-export interface IUser extends Omit<SharedUser, '_id'>, Document {
+export interface IUser extends Omit<SharedUser, '_id'>, Document { // _id omiited from shared type because Document already includes it in Mongoose
     password: string;
     matchPassword(enteredPassword: string): Promise<boolean>;
 }
