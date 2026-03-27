@@ -317,8 +317,10 @@ const QuotesList: React.FC = () => {
                             >
                                 <option value="ALL">All Status</option>
                                 <option value="DRAFT">Draft</option>
+                                <option value="READY">Ready</option>
                                 <option value="SENT_TO_USER">Sent</option>
                                 <option value="ACCEPTED">Accepted</option>
+                                <option value="DECLINED">Declined</option>
                             </select>
                         </div>
                     </div>
@@ -353,11 +355,15 @@ const QuotesList: React.FC = () => {
                                             <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
                                                 {quote.requirementId?.contactInfo?.name || 'Traveler'}
                                             </h3>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${quote.status === 'DRAFT' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' :
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                                quote.status === 'DRAFT' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' :
+                                                quote.status === 'READY' ? 'border-orange-500/30 text-orange-500 bg-orange-500/10' :
                                                 quote.status === 'SENT_TO_USER' ? 'border-blue-500/30 text-blue-500 bg-blue-500/10' :
-                                                    'border-emerald-500/30 text-emerald-500 bg-emerald-500/10'
-                                                }`}>
-                                                {quote.status}
+                                                quote.status === 'ACCEPTED' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
+                                                quote.status === 'DECLINED' ? 'border-red-500/30 text-red-500 bg-red-500/10' :
+                                                'border-gray-500/30 text-gray-500 bg-gray-500/10'
+                                            }`}>
+                                                {quote.status.replace(/_/g, ' ')}
                                             </span>
                                         </div>
                                         <p className="text-sm text-gray-400 flex items-center gap-2">

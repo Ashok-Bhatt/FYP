@@ -7,3 +7,5 @@ export const PORT = process.env.PORT || 5000;
 export const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/voyagegen';
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+export const MAILJET_API_KEY = process.env.MAILJET_API_KEY || '';
+export const MAILJET_API_SECRET = process.env.MAILJET_API_SECRET || '';

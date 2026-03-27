@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaSave, FaArrowLeft, FaCalculator, FaPlane, FaHotel, FaTicketAlt, FaUser, FaMapMarkerAlt, FaCalendarAlt, FaSpinner } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaCalculator, FaPlane, FaHotel, FaTicketAlt, FaUser, FaMapMarkerAlt, FaCalendarAlt, FaSpinner, FaEnvelope } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import AgentHeader from '../../components/AgentHeader';
 
@@ -13,6 +13,7 @@ const QuoteEditor: React.FC = () => {
     const [quote, setQuote] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [sending, setSending] = useState(false);
 
     // Cost state
     const [costs, setCosts] = useState({
@@ -74,7 +75,7 @@ const QuoteEditor: React.FC = () => {
             const config = { headers: { Authorization: `Bearer ${user?.token}` } };
             await axios.put(`${import.meta.env.VITE_API_URL}/api/quotes/${id}`, {
                 costs,
-                status: 'SENT_TO_USER' // Update status when saved/sent
+                // Do not change status here, only when sending
             }, config);
             alert('Quote updated successfully!');
             navigate('/agent/quotes');
@@ -83,6 +84,21 @@ const QuoteEditor: React.FC = () => {
             alert('Failed to update quote');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSend = async () => {
+        setSending(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user?.token}` } };
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/quotes/${id}/send`, {}, config);
+            alert('Quote sent to traveler via email!');
+            navigate('/agent/quotes');
+        } catch (error) {
+            console.error('Error sending quote:', error);
+            alert('Failed to send quote.');
+        } finally {
+            setSending(false);
         }
     };
 
@@ -126,14 +142,24 @@ const QuoteEditor: React.FC = () => {
                                 {quote.requirementId?.contactInfo?.name || 'Valued Traveler'}
                             </h2>
                         </div>
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="bg-emerald-500 text-black px-8 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                            Save & Send Quote
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleSave}
+                                disabled={saving || sending}
+                                className="bg-zinc-800 text-white border border-white/10 px-6 py-3 rounded-xl font-bold hover:bg-zinc-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                                Save Quote
+                            </button>
+                            <button
+                                onClick={handleSend}
+                                disabled={saving || sending}
+                                className="bg-emerald-500 text-black px-8 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {sending ? <FaSpinner className="animate-spin" /> : <FaEnvelope />}
+                                Send via Email
+                            </button>
+                        </div>
                     </div>
                 </div>
 

@@ -25,6 +25,7 @@ import Inventory from '../pages/partner/Inventory';
 
 // Components
 import ProtectedRoute from './ProtectedRoute';
+import PublicQuoteView from '../pages/PublicQuoteView';
 
 const AnimatedRoutes: React.FC = () => {
     const location = useLocation();
@@ -41,6 +42,9 @@ const AnimatedRoutes: React.FC = () => {
                 <Route path="/thank-you" element={<ThankYou />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+
+                {/* Public View */}
+                <Route path="/quote/view/:token" element={<PublicQuoteView />} />
 
                 {/* Agent Routes */}
                 <Route path="/agent" element={

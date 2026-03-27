@@ -53,9 +53,14 @@ const quoteSchema = new Schema<IQuote>({
         final: Number,
         perHead: Number,
     },
+    shareToken: {
+        type: String,
+        unique: true,
+        sparse: true,
+    },
     status: {
         type: String,
-        enum: ['DRAFT', 'READY', 'SENT_TO_USER'],
+        enum: ['DRAFT', 'READY', 'SENT_TO_USER', 'ACCEPTED', 'DECLINED'],
         default: 'DRAFT',
     },
 }, {

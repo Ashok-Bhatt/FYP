@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import Quote, { IQuote } from '../models/Quote';
 import Requirement from '../models/Requirement';
 import PartnerProfile from '../models/PartnerProfile';
 import { QuoteSection } from '../../shared/types';
 import { handleError } from '../utils/errorHandler';
+import { sendQuoteEmail } from '../utils/emailUtils';
 
 // @desc    Auto-generate quotes for selected partners
 // @route   POST /api/quotes/generate
@@ -198,5 +200,88 @@ export const deleteQuote = async (req: Request, res: Response) => {
         res.json({ message: 'Quote deleted successfully' });
     } catch (error: unknown) {
         handleError(res, error, 'Error deleting quote');
+    }
+};
+
+// @desc    Send Quote via Email
+// @route   POST /api/quotes/:id/send
+// @access  Private (Agent)
+export const sendQuoteEmailController = async (req: Request, res: Response) => {
+    try {
+        const quote = await Quote.findById(req.params.id).populate('requirementId');
+        if (!quote) {
+            res.status(404).json({ message: 'Quote not found' });
+            return;
+        }
+
+        // Generate shareToken if it doesn't exist
+        if (!quote.shareToken) {
+            quote.shareToken = crypto.randomUUID();
+        }
+
+        quote.status = 'SENT_TO_USER';
+        await quote.save();
+
+        const requirement: any = quote.requirementId;
+        const toEmail = requirement.contactInfo?.email;
+        const toName = requirement.contactInfo?.name || 'Traveler';
+        const destination = requirement.destination || 'your destination';
+        
+        // Frontend URL for the public quote view
+        const quoteUrl = `http://localhost:5173/quote/view/${quote.shareToken}`;
+
+        if (toEmail) {
+            await sendQuoteEmail(toEmail, toName, quoteUrl, destination);
+        }
+
+        res.json({ message: 'Quote sent successfully', quote });
+    } catch (error: unknown) {
+        handleError(res, error, 'Error sending quote email');
+    }
+};
+
+// @desc    Get Public Quote by Token
+// @route   GET /api/quotes/public/:token
+// @access  Public
+export const getPublicQuote = async (req: Request, res: Response) => {
+    try {
+        const quote = await Quote.findOne({ shareToken: req.params.token })
+            .populate('requirementId', 'destination tripType startDate duration pax contactInfo')
+            .populate('partnerId', 'companyName rating type');
+
+        if (!quote) {
+            res.status(404).json({ message: 'Quote not found or link expired' });
+            return;
+        }
+
+        res.json(quote);
+    } catch (error: unknown) {
+        handleError(res, error, 'Error fetching public quote');
+    }
+};
+
+// @desc    Update Public Quote Status (Accept/Decline)
+// @route   POST /api/quotes/public/:token/status
+// @access  Public
+export const updatePublicQuoteStatus = async (req: Request, res: Response) => {
+    try {
+        const { status } = req.body;
+        if (!['ACCEPTED', 'DECLINED'].includes(status)) {
+            res.status(400).json({ message: 'Invalid status update' });
+            return;
+        }
+
+        const quote = await Quote.findOne({ shareToken: req.params.token });
+        if (!quote) {
+            res.status(404).json({ message: 'Quote not found' });
+            return;
+        }
+
+        quote.status = status;
+        await quote.save();
+
+        res.json({ message: `Quote has been ${status.toLowerCase()}`, quote });
+    } catch (error: unknown) {
+        handleError(res, error, 'Error updating quote status');
     }
 };

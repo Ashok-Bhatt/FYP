@@ -83,7 +83,8 @@ export interface Quote {
     title: string;
     sections: QuoteSection;
     costs: QuoteCosts;
-    status: 'DRAFT' | 'READY' | 'SENT_TO_USER';
+    status: 'DRAFT' | 'READY' | 'SENT_TO_USER' | 'ACCEPTED' | 'DECLINED';
+    shareToken?: string;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }
