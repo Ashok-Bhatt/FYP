@@ -3,6 +3,7 @@ import { PartnerProfile as SharedPartnerProfile } from '../../shared/types';
 
 export interface IPartnerProfile extends Omit<SharedPartnerProfile, '_id' | 'userId'>, Document {
     userId: mongoose.Types.ObjectId;
+    description_embedding?: number[];
 }
 
 const partnerProfileSchema = new Schema<IPartnerProfile>({
@@ -43,6 +44,11 @@ const partnerProfileSchema = new Schema<IPartnerProfile>({
     reviews: {
         type: Number,
         default: 0,
+    },
+    description_embedding: {
+        type: [Number],
+        default: [],
+        index: false 
     },
 }, {
     timestamps: true,

@@ -30,6 +30,7 @@ export interface Requirement {
         children: number;
     };
     hotelStar?: number;
+    description?: string;
     preferences?: string[];
     contactInfo: {
         name: string;
@@ -102,6 +103,7 @@ export interface PartnerProfile {
     rating: number;
     tripsHandled: number;
     description?: string;
+    description_embedding?: number[];
     images?: string[];
     amenities?: string[];
     sightSeeing?: string[];

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import PartnerProfile from '../models/PartnerProfile';
 import { PartnerHotel, PartnerTransport, PartnerActivity } from '../models/PartnerInventory';
 import { handleError } from '../utils/errorHandler';
+import { generateEmbedding } from '../utils/geminiUtils';
+import { cosineSimilarity } from '../utils/vectorUtils';
 
 // @desc    Get current partner profile
 // @route   GET /api/partners/profile
@@ -20,9 +22,14 @@ export const getMyProfile = async (req: Request, res: Response) => {
 // @access  Private (Partner)
 export const updateProfile = async (req: Request, res: Response) => {
     try {
-        const { companyName, destinations, type, specializations, budgetRange } = req.body;
+        const { companyName, destinations, type, specializations, budgetRange, description } = req.body;
 
         let profile = await PartnerProfile.findOne({ userId: req.user!._id });
+
+        let description_embedding: number[] | undefined;
+        if (description) {
+            description_embedding = await generateEmbedding(description);
+        }
 
         if (profile) {
             if (companyName) profile.companyName = companyName;
@@ -30,6 +37,11 @@ export const updateProfile = async (req: Request, res: Response) => {
             if (type) profile.type = type;
             if (specializations) profile.specializations = specializations;
             if (budgetRange) profile.budgetRange = budgetRange;
+            if (description !== undefined) {
+                profile.description = description;
+                if (description_embedding) profile.description_embedding = description_embedding;
+                else profile.description_embedding = [];
+            }
 
             await profile.save();
         } else {
@@ -40,6 +52,8 @@ export const updateProfile = async (req: Request, res: Response) => {
                 type,
                 specializations,
                 budgetRange,
+                description,
+                description_embedding: description_embedding || [],
                 rating: 0,
                 tripsHandled: 0,
                 reviews: 0,
@@ -81,13 +95,13 @@ export const addInventory = async (req: Request, res: Response) => {
 // @route   POST /api/partners/filter
 // @access  Private (Agent)
 export const filterPartners = async (req: Request, res: Response) => {
-    const { destination, budget, type, hotelStar } = req.body;
+    const { destination, budget, type, hotelStar, searchQuery } = req.body;
 
     try {
         const query: any = {};
 
         if (destination) {
-            query.destinations = { $in: [destination] };
+            query.destinations = { $regex: new RegExp(destination, 'i') };
         }
         if (type) {
             query.type = type;
@@ -110,7 +124,23 @@ export const filterPartners = async (req: Request, res: Response) => {
             query.rating = { $gte: Number(hotelStar) };
         }
 
-        const partners = await PartnerProfile.find(query).populate('userId', 'name email');
+        let partners = await PartnerProfile.find(query).populate('userId', 'name email');
+
+        if (searchQuery && typeof searchQuery === 'string') {
+            const queryEmbedding = await generateEmbedding(searchQuery);
+
+            if (queryEmbedding && queryEmbedding.length > 0) {
+                const partnersWithScores = partners.map(partner => {
+                    const embedding = partner.description_embedding || [];
+                    const score = cosineSimilarity(queryEmbedding, embedding);
+                    return { partner, score };
+                });
+
+                partnersWithScores.sort((a, b) => b.score - a.score);
+                partners = partnersWithScores.map(pw => pw.partner);
+            }
+        }
+
         res.json(partners);
     } catch (error: unknown) {
         handleError(res, error);

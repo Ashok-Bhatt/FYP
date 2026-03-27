@@ -27,6 +27,7 @@ const requirementSchema = new Schema<IRequirement>({
         min: 1,
         max: 5,
     },
+    description: String,
     preferences: [String], // e.g., "balcony", "pool"
     contactInfo: {
         name: { type: String, required: true },

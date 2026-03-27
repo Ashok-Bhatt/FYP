@@ -22,6 +22,7 @@ const RequirementForm: React.FC<RequirementFormProps> = ({ isOpen, onClose }) =>
         pax: { adults: 2, children: 0 },
         hotelStar: 4,
         preferences: [] as string[],
+        description: '',
         contactInfo: { name: '', email: '', phone: '', whatsapp: '' }
     });
 
@@ -226,6 +227,23 @@ const RequirementForm: React.FC<RequirementFormProps> = ({ isOpen, onClose }) =>
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Description / Smart Query */}
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    Special Requirements / Describe your dream trip (Smart Search)
+                                </label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange as any}
+                                    placeholder="e.g., I want a quiet beachfront villa with a private pool and vegetarian dining options..."
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-emerald-500 outline-none h-32 resize-none"
+                                />
+                                <p className="text-xs text-gray-500 mt-2">
+                                    💡 Our AI will use this description to find the best matching partners for you.
+                                </p>
                             </div>
 
                             {/* Contact Info */}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaFilter, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave } from 'react-icons/fa';
+import { FaFilter, FaSearch, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import AgentHeader from '../../components/AgentHeader';
 
@@ -25,6 +25,7 @@ const RequirementDetails: React.FC = () => {
         duration: '',
         adults: 1,
         hotelStar: 4,
+        searchQuery: '',
     });
 
     useEffect(() => {
@@ -44,6 +45,7 @@ const RequirementDetails: React.FC = () => {
                     duration: reqRes.data.duration,
                     adults: reqRes.data.pax.adults,
                     hotelStar: reqRes.data.hotelStar,
+                    searchQuery: reqRes.data.description || '',
                 });
 
                 // Initial Partner Fetch
@@ -55,6 +57,7 @@ const RequirementDetails: React.FC = () => {
                     duration: reqRes.data.duration,
                     adults: reqRes.data.pax.adults,
                     hotelStar: reqRes.data.hotelStar,
+                    searchQuery: reqRes.data.description || '',
                 }, config);
 
             } catch (error) {
@@ -187,6 +190,17 @@ const RequirementDetails: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Smart Query Description */}
+                {requirement.description && (
+                    <div className="bg-zinc-900/50 backdrop-blur-sm border border-emerald-500/20 p-8 rounded-3xl mb-12 hover:border-emerald-500/40 transition-all">
+                        <h3 className="text-lg font-bold mb-4 text-emerald-400 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
+                            User Requirements
+                        </h3>
+                        <p className="text-gray-300 italic leading-relaxed">"{requirement.description}"</p>
+                    </div>
+                )}
+
                 {/* Match Partners Section */}
                 <div className="bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -210,7 +224,9 @@ const RequirementDetails: React.FC = () => {
                     </div>
 
                     {/* Filter Bar - Fixed Overlapping Stars */}
-                    <form onSubmit={handleFilter} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8 bg-black/40 p-6 rounded-2xl border border-white/5">
+                    <form onSubmit={handleFilter} className="space-y-6 mb-8 bg-black/40 p-6 rounded-2xl border border-white/5">
+                        {/* Main Filters Row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</label>
                             <div className="relative">
@@ -266,7 +282,7 @@ const RequirementDetails: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2 lg:col-span-2">
+                        <div className="space-y-2 lg:col-span-1">
                             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Hotel Rating</label>
                             <div className="flex gap-2">
                                 {[3, 4, 5].map(star => (
@@ -283,15 +299,35 @@ const RequirementDetails: React.FC = () => {
                                         <FaStar className={filters.hotelStar === star ? 'text-white' : 'text-gray-600'} size={12} />
                                     </button>
                                 ))}
-                                <button
-                                    type="submit"
-                                    className="flex-1 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center justify-center gap-2 transition-colors border border-white/10"
-                                >
-                                    <FaFilter size={12} /> Filter
-                                </button>
                             </div>
                         </div>
+                        </div>
+
+                        {/* Smart Search Row */}
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1 w-full space-y-2">
+                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Smart Search (AI Powered)</label>
+                                <div className="relative">
+                                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        value={filters.searchQuery}
+                                        onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-gray-600"
+                                        placeholder="Ex: 'Luxury villas with private pool and ocean view' or 'Family friendly resorts with kids club'..."
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                type="submit"
+                                className="w-full md:w-auto px-8 py-3 bg-white hover:bg-emerald-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95 group"
+                            >
+                                <FaFilter size={14} className="group-hover:rotate-12 transition-transform" />
+                                Search Partners
+                            </button>
+                        </div>
                     </form>
+
 
                     {/* Partners Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
