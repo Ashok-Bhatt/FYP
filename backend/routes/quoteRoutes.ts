@@ -8,7 +8,7 @@ import {
     deleteQuote,
     sendQuoteEmailController,
     getPublicQuote,
-    updatePublicQuoteStatus
+    updatePublicQuoteStatus,
     generateItinerary,
 } from '../controllers/quoteController';
 import { protect, authorize } from '../middleware/authMiddleware';
