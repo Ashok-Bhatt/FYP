@@ -5,6 +5,9 @@ export interface IQuote extends Omit<SharedQuote, '_id' | 'requirementId' | 'par
     requirementId: mongoose.Types.ObjectId;
     partnerId: mongoose.Types.ObjectId;
     agentId: mongoose.Types.ObjectId;
+    viewedAt?: Date;
+    viewCount?: number;
+    lastViewedAt?: Date;
 }
 
 const quoteSchema = new Schema<IQuote>({
@@ -73,6 +76,11 @@ const quoteSchema = new Schema<IQuote>({
         tips: String,
     }],
     viewedAt: Date,
+    viewCount: {
+        type: Number,
+        default: 0,
+    },
+    lastViewedAt: Date,
 }, {
     timestamps: true,
 });

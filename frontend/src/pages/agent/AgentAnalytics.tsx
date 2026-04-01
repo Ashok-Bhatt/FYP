@@ -262,10 +262,27 @@ const AgentAnalytics = () => {
                     axisLine={false}
                     tickLine={false}
                 />
-                <YAxis stroke="#52525b" fontSize={10} axisLine={false} tickLine={false} />
+                <YAxis 
+                    stroke="#52525b" 
+                    fontSize={10} 
+                    axisLine={false} 
+                    tickLine={false}
+                    tickFormatter={(value) => {
+                        if (value >= 100000) {
+                            return `${(value / 100000).toFixed(1)}L`;
+                        } else if (value >= 1000) {
+                            return `${(value / 1000).toFixed(0)}K`;
+                        }
+                        return Math.round(value).toString();
+                    }}
+                />
                 <Tooltip 
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px' }}
                     labelStyle={{ color: '#71717a', fontSize: '10px', marginBottom: '4px' }}
+                    formatter={(value: number, name: string) => {
+                        const formattedValue = `₹${Math.round(value).toLocaleString()}`;
+                        return [formattedValue, name];
+                    }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
                 <Line 

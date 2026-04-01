@@ -10,6 +10,7 @@ import {
     getPublicQuote,
     updatePublicQuoteStatus,
     generateItinerary,
+    streamQuoteViews,
 } from '../controllers/quoteController';
 import { protect, authorize } from '../middleware/authMiddleware';
 
@@ -28,5 +29,8 @@ router.post('/:id/send', protect, authorize('AGENT', 'ADMIN'), sendQuoteEmailCon
 router.get('/:id', protect, authorize('AGENT', 'ADMIN'), getQuoteById);
 router.put('/:id', protect, authorize('AGENT', 'ADMIN'), updateQuote);
 router.delete('/:id', protect, authorize('AGENT', 'ADMIN'), deleteQuote);
+
+// SSE endpoint for real-time quote view tracking
+router.get('/stream/views', protect, authorize('AGENT', 'ADMIN'), streamQuoteViews);
 
 export default router;

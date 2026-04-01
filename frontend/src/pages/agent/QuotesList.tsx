@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaFileInvoice, FaEye, FaDownload, FaSpinner, FaTrash, FaShare, FaEnvelope, FaWhatsapp, FaInstagram, FaSearch, FaFilter } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import QuoteFilters from '../../components/agent/QuoteFilters';
+import QuoteCard from '../../components/agent/QuoteCard';
+import EmptyState from '../../components/agent/EmptyState';
+import LoadingState from '../../components/agent/LoadingState';
 
 const QuotesList: React.FC = () => {
     const { user } = useAuth();
@@ -14,6 +17,30 @@ const QuotesList: React.FC = () => {
     const [shareDropdown, setShareDropdown] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
+
+    console.log(quotes);
+
+    // Helper functions for view data
+    const getViewStatusColor = (lastViewedAt: string | null) => {
+        if (!lastViewedAt) return 'red';
+        
+        const now = new Date();
+        const lastViewed = new Date(lastViewedAt);
+        const hoursDiff = (now.getTime() - lastViewed.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursDiff < 1) return 'green';
+        if (hoursDiff < 24) return 'amber';
+        return 'red';
+    };
+
+    const getViewStatusClasses = (status: string) => {
+        switch (status) {
+            case 'green': return { bg: 'bg-green-500/10', text: 'text-green-500', border: 'border-green-500/30' };
+            case 'amber': return { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/30' };
+            case 'red': return { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/30' };
+            default: return { bg: 'bg-gray-500/10', text: 'text-gray-500', border: 'border-gray-500/30' };
+        }
+    };
 
     useEffect(() => {
         const fetchQuotes = async () => {
@@ -51,6 +78,57 @@ const QuotesList: React.FC = () => {
 
         setFilteredQuotes(result);
     }, [searchTerm, filterStatus, quotes]);
+
+    // Setup SSE connection for real-time updates
+    useEffect(() => {
+        if (!user?.token) return;
+
+        const eventSource = new EventSource(
+            `${import.meta.env.VITE_API_URL}/api/quotes/stream/views`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${user.token}`
+                }
+            }
+        );
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'quote_viewed') {
+                    // Update the specific quote in the list
+                    setQuotes(prevQuotes => 
+                        prevQuotes.map(quote => 
+                            quote._id === data.quoteId 
+                                ? { 
+                                    ...quote, 
+                                    viewCount: (quote.viewCount || 0) + 1,
+                                    lastViewedAt: data.timestamp
+                                }
+                                : quote
+                        )
+                    );
+                    
+                    // Show toast notification
+                    toast.success('Your quote was just viewed!', {
+                        icon: '👁️',
+                        duration: 4000,
+                        position: 'top-right',
+                    });
+                }
+            } catch (error) {
+                console.error('Error parsing SSE message:', error);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE connection error:', error);
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [user?.token]);
 
     const downloadPDF = (quote: any) => {
         const getDestinationImage = (destination: string) => {
@@ -277,16 +355,10 @@ const QuotesList: React.FC = () => {
         }
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
-            <FaSpinner className="animate-spin text-4xl text-emerald-400" />
-        </div>
-    );
+    if (loading) return <LoadingState />;
 
     return (
         <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white">
-
-
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
                     <div>
@@ -296,151 +368,36 @@ const QuotesList: React.FC = () => {
                         <p className="text-gray-400">Manage and share your travel quotations</p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                        <div className="relative">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search quotes..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full sm:w-64 bg-zinc-900 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm focus:border-emerald-500 outline-none transition-all"
-                            />
-                        </div>
-                        <div className="relative">
-                            <FaFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="w-full sm:w-48 bg-zinc-900 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm focus:border-emerald-500 outline-none appearance-none cursor-pointer"
-                            >
-                                <option value="ALL">All Status</option>
-                                <option value="DRAFT">Draft</option>
-                                <option value="READY">Ready</option>
-                                <option value="SENT_TO_USER">Sent</option>
-                                <option value="ACCEPTED">Accepted</option>
-                                <option value="DECLINED">Declined</option>
-                            </select>
-                        </div>
-                    </div>
+                    <QuoteFilters
+                        searchTerm={searchTerm}
+                        filterStatus={filterStatus}
+                        onSearchChange={setSearchTerm}
+                        onFilterChange={setFilterStatus}
+                    />
                 </div>
 
                 {filteredQuotes.length === 0 ? (
-                    <div className="bg-zinc-900/50 border border-white/10 rounded-3xl p-16 text-center">
-                        <div className="w-20 h-20 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <FaFileInvoice className="text-4xl text-gray-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold mb-2">No Quotes Found</h3>
-                        <p className="text-gray-400 mb-8">Try adjusting your search or generate a new quote.</p>
-                        <button
-                            onClick={() => navigate('/agent/dashboard')}
-                            className="bg-emerald-500 text-black px-8 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
-                        >
-                            Go to Dashboard
-                        </button>
-                    </div>
+                    <EmptyState onNavigateToDashboard={() => navigate('/agent/dashboard')} />
                 ) : (
                     <div className="grid grid-cols-1 gap-6">
                         {filteredQuotes.map(quote => (
-                            <motion.div
+                            <QuoteCard
                                 key={quote._id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 hover:border-emerald-500/30 transition-all hover:shadow-xl hover:shadow-emerald-500/5 group"
-                            >
-                                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
-                                                {quote.requirementId?.contactInfo?.name || 'Traveler'}
-                                            </h3>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                                                quote.status === 'DRAFT' ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10' :
-                                                quote.status === 'READY' ? 'border-orange-500/30 text-orange-500 bg-orange-500/10' :
-                                                quote.status === 'SENT_TO_USER' ? 'border-blue-500/30 text-blue-500 bg-blue-500/10' :
-                                                quote.status === 'ACCEPTED' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
-                                                quote.status === 'DECLINED' ? 'border-red-500/30 text-red-500 bg-red-500/10' :
-                                                'border-gray-500/30 text-gray-500 bg-gray-500/10'
-                                            }`}>
-                                                {quote.status.replace(/_/g, ' ')}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-400 flex items-center gap-2">
-                                            <span className="font-mono text-xs bg-white/5 px-2 py-1 rounded">#{quote._id.slice(-6)}</span>
-                                            <span>•</span>
-                                            <span>{quote.requirementId?.destination || 'N/A'}</span>
-                                            <span>•</span>
-                                            <span>{quote.requirementId?.duration || 0} Days</span>
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 lg:gap-12 border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-8">
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total</p>
-                                            <p className="text-lg font-bold text-emerald-400">₹{quote.costs?.final?.toLocaleString() || '0'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Hotels</p>
-                                            <p className="text-lg font-bold">{quote.sections?.hotels?.length || 0}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Activities</p>
-                                            <p className="text-lg font-bold">{quote.sections?.activities?.length || 0}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Transport</p>
-                                            <p className="text-lg font-bold">{quote.sections?.transport?.length || 0}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-white/10">
-                                        <button
-                                            onClick={() => navigate(`/agent/quote/${quote._id}`)}
-                                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white transition-colors"
-                                            title="Edit Quote"
-                                        >
-                                            <FaEye />
-                                        </button>
-                                        <button
-                                            onClick={() => downloadPDF(quote)}
-                                            className="p-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
-                                            title="Download PDF"
-                                        >
-                                            <FaDownload />
-                                        </button>
-
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShareDropdown(shareDropdown === quote._id ? null : quote._id)}
-                                                className="p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
-                                                title="Share"
-                                            >
-                                                <FaShare />
-                                            </button>
-                                            {shareDropdown === quote._id && (
-                                                <div className="absolute right-0 top-full mt-2 bg-zinc-800 border border-white/10 rounded-xl shadow-xl overflow-hidden z-10 min-w-[160px]">
-                                                    <button onClick={() => handleShare(quote, 'email')} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 text-sm text-left"><FaEnvelope /> Email</button>
-                                                    <button onClick={() => handleShare(quote, 'whatsapp')} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 text-sm text-left"><FaWhatsapp /> WhatsApp</button>
-                                                    <button onClick={() => handleShare(quote, 'instagram')} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 text-sm text-left"><FaInstagram /> Instagram</button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <button
-                                            onClick={() => deleteQuote(quote._id)}
-                                            className="p-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
-                                            title="Delete"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
+                                quote={quote}
+                                shareDropdown={shareDropdown}
+                                setShareDropdown={setShareDropdown}
+                                onView={(id) => navigate(`/agent/quote/${id}`)}
+                                onDownload={downloadPDF}
+                                onDelete={deleteQuote}
+                                onShare={handleShare}
+                                getViewStatusColor={getViewStatusColor}
+                                getViewStatusClasses={getViewStatusClasses}
+                            />
                         ))}
                     </div>
                 )}
-            </div>
         </div>
+    </div>
     );
 };
 

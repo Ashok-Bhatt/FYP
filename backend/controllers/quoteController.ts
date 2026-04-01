@@ -1,12 +1,34 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import Quote, { IQuote } from '../models/Quote';
+import QuoteView from '../models/QuoteView';
 import Requirement from '../models/Requirement';
 import PartnerProfile from '../models/PartnerProfile';
 import { QuoteSection } from '../../shared/types';
 import { handleError } from '../utils/errorHandler';
 import { sendQuoteEmail } from '../utils/emailUtils';
 import { generateItinerary as groqGenerateItinerary } from '../utils/groqUtils';
+
+// Store active SSE connections
+const activeConnections = new Set<Response>();
+
+// Helper function to broadcast quote view events
+export const broadcastQuoteView = (quoteId: string, timestamp: Date) => {
+    const event = JSON.stringify({
+        type: 'quote_viewed',
+        quoteId,
+        timestamp
+    });
+
+    activeConnections.forEach(connection => {
+        try {
+            connection.write(`data: ${event}\n\n`);
+        } catch (error) {
+            // Remove dead connections
+            activeConnections.delete(connection);
+        }
+    });
+};
 
 // @desc    Auto-generate quotes for selected partners
 // @route   POST /api/quotes/generate
@@ -255,11 +277,38 @@ export const getPublicQuote = async (req: Request, res: Response) => {
             return;
         }
         
-        // Update viewedAt on first access
-        if (!quote.viewedAt) {
-            quote.viewedAt = new Date();
-            await quote.save();
-        }
+        const currentTimestamp = new Date();
+        const userAgent = req.get('User-Agent') || '';
+        const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
+        const ipHash = crypto.createHash('sha256').update(ip.toString()).digest('hex');
+        
+        // Update view tracking fields
+        const isFirstView = !quote.viewedAt;
+        await Quote.findByIdAndUpdate(quote._id, {
+            $inc: { viewCount: 1 },
+            $set: {
+                lastViewedAt: currentTimestamp,
+                ...(isFirstView && { viewedAt: currentTimestamp })
+            }
+        });
+
+        // Create view record asynchronously (non-blocking)
+        setImmediate(async () => {
+            try {
+                const viewRecord = new QuoteView({
+                    quoteId: quote._id,
+                    timestamp: currentTimestamp,
+                    userAgent,
+                    ipHash,
+                });
+                await viewRecord.save();
+                
+                // Trigger SSE broadcast
+                broadcastQuoteView(quote._id.toString(), currentTimestamp);
+            } catch (error) {
+                console.error('Failed to save quote view:', error);
+            }
+        });
 
         res.json(quote);
     } catch (error: unknown) {
@@ -341,4 +390,33 @@ export const generateItinerary = async (req: Request, res: Response) => {
     } catch (error: unknown) {
         handleError(res, error, 'Itinerary generation error');
     }
+};
+
+// @desc    SSE endpoint for real-time quote view tracking
+// @route   GET /api/quotes/stream/views
+// @access  Private (Agent)
+export const streamQuoteViews = async (req: Request, res: Response) => {
+    // Set SSE headers
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    // Send initial connection message
+    res.write('data: {"type": "connected"}\n\n');
+
+    // Store connection
+    activeConnections.add(res);
+
+    // Remove connection on client disconnect
+    req.on('close', () => {
+        activeConnections.delete(res);
+    });
+
+    req.on('aborted', () => {
+        activeConnections.delete(res);
+    });
 };
