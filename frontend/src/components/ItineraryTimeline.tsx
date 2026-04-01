@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FaMapMarkerAlt, FaUtensils, FaLightbulb, FaSyncAlt, FaSpinner, FaStar } from 'react-icons/fa';
 import { ItineraryDay } from '../types';
@@ -60,25 +60,46 @@ const DAY_COLORS = [
 ];
 
 const ItineraryTimeline: React.FC<Props> = ({ days, destination, onRegenerate, isRegenerating }) => {
-    // Map of day index → resolved image URL
-    const [images, setImages] = useState<Record<number, string>>({});
+    const itineraryKey = useMemo(
+        () => JSON.stringify({ destination, days: days.map(day => ({ day: day.day, title: day.title, activities: day.activities })) }),
+        [days, destination]
+    );
+
+    const [imageState, setImageState] = useState<{ key: string; images: Record<number, string> }>({
+        key: '',
+        images: {},
+    });
+    const images = imageState.key === itineraryKey ? imageState.images : {};
 
     // Fetch all Pexels images in parallel when days change
     useEffect(() => {
         if (!days.length) return;
-        setImages({}); // Reset on new itinerary
+
+        let cancelled = false;
+        const activeKey = itineraryKey;
 
         days.forEach((day, idx) => {
             // Build query from the most interesting activity of the day + destination
             const query = buildQuery(day.activities[0] || destination, destination);
             fetchPexelsPhoto(query).then(url => {
-                setImages(prev => ({
-                    ...prev,
-                    [idx]: url ?? getFallbackImage(idx),
-                }));
+                if (cancelled) return;
+                setImageState(prev => {
+                    const baseImages = prev.key === activeKey ? prev.images : {};
+                    return {
+                        key: activeKey,
+                        images: {
+                            ...baseImages,
+                            [idx]: url ?? getFallbackImage(idx),
+                        },
+                    };
+                });
             });
         });
-    }, [days, destination]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [days, destination, itineraryKey]);
 
     return (
         <div className="w-full">
@@ -153,7 +174,7 @@ const ItineraryTimeline: React.FC<Props> = ({ days, destination, onRegenerate, i
                                             />
                                         ) : (
                                             /* Skeleton shimmer while loading */
-                                            <div className="w-full h-full animate-pulse bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%]" />
+                                            <div className="w-full h-full animate-pulse bg-linear-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-size-[200%_100%]" />
                                         )}
 
                                         {/* Gradient overlay */}
@@ -267,3 +288,4 @@ const ItineraryTimeline: React.FC<Props> = ({ days, destination, onRegenerate, i
 };
 
 export default ItineraryTimeline;
+

@@ -242,22 +242,33 @@ export const sendQuoteEmailController = async (req: Request, res: Response) => {
             quote.shareToken = crypto.randomUUID();
         }
 
-        quote.status = 'SENT_TO_USER';
-        await quote.save();
-
         const requirement: any = quote.requirementId;
         const toEmail = requirement.contactInfo?.email;
         const toName = requirement.contactInfo?.name || 'Traveler';
         const destination = requirement.destination || 'your destination';
-        
-        // Frontend URL for the public quote view
-        const quoteUrl = `http://localhost:5173/quote/view/${quote.shareToken}`;
 
-        if (toEmail) {
-            await sendQuoteEmail(toEmail, toName, quoteUrl, destination);
+        const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const quoteUrl = `${frontendBaseUrl}/quote/view/${quote.shareToken}`;
+
+        const emailSent = toEmail
+            ? await sendQuoteEmail(toEmail, toName, quoteUrl, destination)
+            : false;
+
+        quote.status = 'SENT_TO_USER';
+        await quote.save();
+
+        if (!emailSent) {
+            res.status(202).json({
+                message: toEmail
+                    ? 'Quote marked as sent, but email delivery failed.'
+                    : 'Quote marked as sent. Traveler email is missing.',
+                quote,
+                emailSent: false,
+            });
+            return;
         }
 
-        res.json({ message: 'Quote sent successfully', quote });
+        res.json({ message: 'Quote sent successfully', quote, emailSent: true });
     } catch (error: unknown) {
         handleError(res, error, 'Error sending quote email');
     }
