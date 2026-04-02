@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 
 const PlanJourney: React.FC = () => {
     const navigate = useNavigate();
-    const navigate = useNavigate();
     const { user } = useAuth();
     const token = user?.token || '';
 
