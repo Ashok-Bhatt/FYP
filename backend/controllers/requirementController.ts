@@ -7,7 +7,14 @@ import { handleError } from '../utils/errorHandler';
 // @access  Public
 export const createRequirement = async (req: Request, res: Response) => {
     try {
-        const requirement = await Requirement.create(req.body);
+        const requirementData = { ...req.body };
+        
+        // If user is authenticated, add userId
+        if (req.user && req.user._id) {
+            requirementData.userId = req.user._id;
+        }
+        
+        const requirement = await Requirement.create(requirementData);
         res.status(201).json(requirement);
     } catch (error: unknown) {
         handleError(res, error, 'Error creating requirement');
@@ -59,6 +66,18 @@ export const updateRequirementStatus = async (req: Request, res: Response) => {
         }
     } catch (error: unknown) {
         handleError(res, error, 'Error updating requirement status');
+    }
+};
+
+// @desc    Get user's requirements
+// @route   GET /api/requirements/user
+// @access  Private (User)
+export const getUserRequirements = async (req: Request, res: Response) => {
+    try {
+        const requirements = await Requirement.find({ userId: req.user.id }).sort({ createdAt: -1 });
+        res.json(requirements);
+    } catch (error: unknown) {
+        handleError(res, error, 'Error fetching user requirements');
     }
 };
 

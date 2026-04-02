@@ -1,9 +1,16 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { Requirement as SharedRequirement } from '../../shared/types';
 
-export interface IRequirement extends Omit<SharedRequirement, '_id'>, Document { }
+export interface IRequirement extends Omit<SharedRequirement, '_id'>, Document { 
+    userId?: mongoose.Types.ObjectId;
+}
 
 const requirementSchema = new Schema<IRequirement>({
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     destination: {
         type: String,
         required: true,

@@ -12,6 +12,7 @@ import ThankYou from '../pages/ThankYou';
 // Layouts
 import AgentLayout from '../layouts/AgentLayout';
 import PartnerLayout from '../layouts/PartnerLayout';
+import TravelerLayout from '../layouts/TravelerLayout';
 
 // Agent Pages
 import AgentDashboard from '../pages/agent/AgentDashboard';
@@ -24,9 +25,17 @@ import AgentAnalytics from '../pages/agent/AgentAnalytics';
 import PartnerDashboard from '../pages/partner/PartnerDashboard';
 import Inventory from '../pages/partner/Inventory';
 
+// Traveler Pages
+import TravelerDashboard from '../pages/traveler/TravelerDashboard';
+import TravelerQuotes from '../pages/traveler/TravelerQuotes';
+
+// Public Pages
+import PublicQuoteView from '../pages/PublicQuoteView';
+import CompareView from '../pages/public/CompareView';
+import QuoteAccepted from '../pages/public/QuoteAccepted';
+
 // Components
 import ProtectedRoute from './ProtectedRoute';
-import PublicQuoteView from '../pages/PublicQuoteView';
 
 const AnimatedRoutes: React.FC = () => {
     const location = useLocation();
@@ -35,17 +44,14 @@ const AnimatedRoutes: React.FC = () => {
         <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/plan-journey" element={
-                    <ProtectedRoute role="USER">
-                        <PlanJourney />
-                    </ProtectedRoute>
-                } />
-                <Route path="/thank-you" element={<ThankYou />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/thank-you" element={<ThankYou />} />
 
                 {/* Public View */}
                 <Route path="/quote/view/:token" element={<PublicQuoteView />} />
+                <Route path="/quote/compare/:token" element={<CompareView />} />
+                <Route path="/quote/accepted/:quoteId" element={<QuoteAccepted />} />
 
                 {/* Agent Routes */}
                 <Route path="/agent" element={
@@ -69,6 +75,19 @@ const AnimatedRoutes: React.FC = () => {
                 }>
                     <Route index element={<PartnerDashboard />} />
                     <Route path="inventory" element={<Inventory />} />
+                </Route>
+
+                {/* Traveler Routes */}
+                <Route path="/traveler" element={
+                    <ProtectedRoute role="USER">
+                        <TravelerLayout />
+                    </ProtectedRoute>
+                }>
+                    <Route index element={<TravelerDashboard />} />
+                    <Route path="dashboard" element={<TravelerDashboard />} />
+                    <Route path="quotes" element={<TravelerQuotes />} />
+                    <Route path="quotes/:requirementId" element={<TravelerQuotes />} />
+                    <Route path="plan-journey" element={<PlanJourney />} />
                 </Route>
             </Routes>
         </AnimatePresence>

@@ -9,6 +9,11 @@ import {
     sendQuoteEmailController,
     getPublicQuote,
     updatePublicQuoteStatus,
+    generateCompareToken,
+    getQuotesForComparison,
+    getQuotesForComparisonByToken,
+    acceptQuote,
+    getUserQuotes,
     generateItinerary,
     streamQuoteViews,
 } from '../controllers/quoteController';
@@ -20,6 +25,16 @@ const router = express.Router();
 router.get('/public/:token', getPublicQuote);
 router.post('/public/:token/status', updatePublicQuoteStatus);
 
+// Comparison routes (public with token)
+router.get('/compare/:requirementId', getQuotesForComparison);
+router.get('/compare/by-token', getQuotesForComparisonByToken);
+router.post('/:quoteId/accept', acceptQuote);
+
+// User routes
+router.get('/user', protect, authorize('USER'), getUserQuotes);
+
+// Protected routes
+router.post('/generate-compare-token/:requirementId', protect, authorize('AGENT', 'ADMIN'), generateCompareToken);
 router.post('/generate', protect, authorize('AGENT', 'ADMIN'), generateQuotes);
 router.post('/:id/itinerary', protect, authorize('AGENT', 'ADMIN'), generateItinerary);
 router.get('/', protect, authorize('AGENT', 'ADMIN'), getQuotes);

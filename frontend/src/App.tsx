@@ -13,13 +13,20 @@ const LenisWrapper: React.FC<LenisWrapperProps> = ({ children }) => {
     const location = useLocation();
 
     useEffect(() => {
-        // Only enable Lenis smooth scroll on landing page, not in portals
-        if (location.pathname.startsWith('/agent') ||
-            location.pathname.startsWith('/partner') ||
-            location.pathname === '/login' ||
-            location.pathname === '/signup' ||
-            location.pathname === '/plan-journey' ||
-            location.pathname === '/thank-you') {
+        const shouldDisableLenis = () => {
+            const location = window.location.pathname;
+            return (
+                location.startsWith('/agent') ||
+                location.startsWith('/partner') ||
+                location.startsWith('/traveler') ||
+                location === '/login' ||
+                location === '/signup' ||
+                location === '/thank-you' ||
+                location.startsWith('/quote/')
+            );
+        };
+
+        if (shouldDisableLenis()) {
             return; // Skip Lenis for these routes
         }
 

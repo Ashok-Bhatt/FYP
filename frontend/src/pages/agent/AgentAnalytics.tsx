@@ -55,7 +55,11 @@ const AgentAnalytics = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
-      <FaSpinner className="animate-spin text-4xl text-emerald-400" />
+      <div className="text-center">
+        <FaSpinner className="animate-spin text-4xl text-emerald-400 mx-auto mb-4" />
+        <div className="text-white text-xl font-medium">Analyzing your performance...</div>
+        <div className="text-gray-400 text-sm mt-2">Calculating travel insights</div>
+      </div>
     </div>
   );
 

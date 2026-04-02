@@ -28,7 +28,7 @@ const Signup: React.FC = () => {
             const user = await register(formData);
             if (user.role === 'AGENT') navigate('/agent');
             else if (user.role === 'PARTNER') navigate('/partner');
-            else navigate('/plan-journey');
+            else navigate('/traveler/plan-journey');
         } catch (err) {
             setError(err as string);
         }

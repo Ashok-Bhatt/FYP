@@ -4,10 +4,72 @@ import Quote, { IQuote } from '../models/Quote';
 import QuoteView from '../models/QuoteView';
 import Requirement from '../models/Requirement';
 import PartnerProfile from '../models/PartnerProfile';
+import User from '../models/User';
 import { QuoteSection } from '../../shared/types';
 import { handleError } from '../utils/errorHandler';
 import { sendQuoteEmail } from '../utils/emailUtils';
 import { generateItinerary as groqGenerateItinerary } from '../utils/groqUtils';
+
+// Comparison interfaces
+interface ComparisonInsights {
+    cheapestQuoteId: string;
+    highestRatedQuoteId: string;
+    mostActivitiesQuoteId: string;
+    bestValueQuoteId: string;
+    priceRange: { min: number; max: number };
+    averageRating: number;
+    totalQuotes: number;
+}
+
+interface HotelSummary {
+    name: string;
+    rating?: number;
+    location: string;
+    roomType: string;
+    nights: number;
+    amenities: string[];
+    images?: string[];
+}
+
+interface ActivitySummary {
+    name: string;
+    duration: string;
+    included: boolean;
+    category: 'adventure' | 'cultural' | 'relaxation' | 'dining';
+}
+
+interface QuoteComparison {
+    _id: string;
+    partner: {
+        _id: string;
+        name: string;
+        rating?: number;
+        totalReviews?: number;
+        logo?: string;
+        specialties?: string[];
+    };
+    status: 'SENT' | 'READY';
+    costs: {
+        net: number;
+        margin: number;
+        final: number;
+        perHead: number;
+        breakdown: {
+            hotels: number;
+            transport: number;
+            activities: number;
+            other: number;
+        };
+    };
+    hotels: HotelSummary[];
+    itinerary: any[];
+    activities: ActivitySummary[];
+    highlights: string[];
+    inclusions: string[];
+    exclusions: string[];
+    createdAt: string;
+    validUntil?: string;
+}
 
 // Store active SSE connections
 const activeConnections = new Set<Response>();
@@ -140,6 +202,62 @@ export const generateQuotes = async (req: Request, res: Response) => {
     }
 };
 
+// @desc    Get user's quotes
+// @route   GET /api/quotes/user
+// @access  Private (User)
+export const getUserQuotes = async (req: Request, res: Response) => {
+    try {
+        if (!req.user?.id) {
+            res.status(401).json({ message: 'User not authenticated' });
+            return;
+        }
+
+        const { requirementId } = req.query;
+        
+        if (requirementId) {
+            // If requirementId is provided, get quotes for that specific requirement
+            // Verify the requirement belongs to the user
+            const requirement = await Requirement.findOne({ 
+                _id: requirementId, 
+                userId: req.user.id 
+            });
+            
+            if (!requirement) {
+                res.status(404).json({ message: 'Requirement not found or does not belong to user' });
+                return;
+            }
+            
+            // Get quotes for this specific requirement
+            const quotes = await Quote.find({ 
+                requirementId: requirementId,
+                status: { $in: ['SENT_TO_USER', 'ACCEPTED', 'DECLINED'] }
+            })
+            .populate('partnerId', 'name companyName')
+            .populate('requirementId', 'destination tripType budget duration')
+            .sort({ createdAt: -1 });
+            
+            res.json(quotes);
+            return;
+        }
+
+        // Default behavior: get all quotes for the user
+        const userRequirements = await Requirement.find({ userId: req.user.id }).select('_id');
+        const requirementIds = userRequirements.map(req => req._id);
+        
+        const quotes = await Quote.find({ 
+            requirementId: { $in: requirementIds },
+            status: { $in: ['SENT_TO_USER', 'ACCEPTED', 'DECLINED'] }
+        })
+        .populate('partnerId', 'name companyName')
+        .populate('requirementId', 'destination tripType budget duration')
+        .sort({ createdAt: -1 });
+        
+        res.json(quotes);
+    } catch (error: unknown) {
+        handleError(res, error, 'Error fetching user quotes');
+    }
+};
+
 // @desc    Get all quotes for agent
 // @route   GET /api/quotes
 // @access  Private (Agent)
@@ -147,9 +265,7 @@ export const getQuotes = async (req: Request, res: Response) => {
     try {
         const quotes = await Quote.find({})
             .populate('requirementId', 'destination tripType budget startDate duration')
-            .populate('agentId', 'name email')
             .sort({ createdAt: -1 });
-
         res.json(quotes);
     } catch (error: unknown) {
         handleError(res, error, 'Error fetching quotes');
@@ -431,3 +547,373 @@ export const streamQuoteViews = async (req: Request, res: Response) => {
         activeConnections.delete(res);
     });
 };
+
+// @desc    Get quotes for comparison by token
+// @route   GET /api/quotes/compare/by-token
+// @access  Public (with token)
+export const getQuotesForComparisonByToken = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.query;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Token is required' });
+        }
+
+        // Find requirement by compare token
+        const requirement = await Requirement.findOne({ compareToken: token });
+
+        if (!requirement) {
+            return res.status(404).json({ error: 'Invalid comparison token' });
+        }
+
+        // Check if token is expired (7 days)
+        const tokenExpiry = new Date(requirement.compareTokenGenerated || requirement.createdAt);
+        tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+        
+        if (tokenExpiry < new Date()) {
+            return res.status(410).json({ error: 'Comparison link expired' });
+        }
+
+        // Get all quotes for this requirement with SENT or READY status
+        const quotes = await Quote.find({
+            requirementId: requirement._id,
+            status: { $in: ['SENT', 'READY'] }
+        }).populate('partnerId');
+
+        // Transform quotes for comparison (reuse existing logic)
+        const transformedQuotes: QuoteComparison[] = await Promise.all(
+            quotes.map(async (quote) => {
+                const partner = await User.findById(quote.partnerId);
+                const partnerProfile = await PartnerProfile.findOne({ userId: quote.partnerId });
+                
+                // Calculate cost breakdown
+                const hotelsCost = quote.sections.hotels?.reduce((sum: number, hotel: any) => sum + (hotel.total || 0), 0) || 0;
+                const transportCost = quote.sections.transport?.reduce((sum: number, transport: any) => sum + (transport.total || 0), 0) || 0;
+                const activitiesCost = quote.sections.activities?.reduce((sum: number, activity: any) => sum + (activity.total || 0), 0) || 0;
+                const otherCost = (quote.costs?.net || 0) - hotelsCost - transportCost - activitiesCost;
+
+                // Transform hotels
+                const hotels: HotelSummary[] = quote.sections.hotels?.map((hotel: any) => ({
+                    name: hotel.name || 'Hotel',
+                    rating: hotel.rating || undefined,
+                    location: hotel.city || 'Location',
+                    roomType: hotel.roomType || 'Standard',
+                    nights: hotel.nights || 1,
+                    amenities: hotel.amenities || [],
+                    images: hotel.images || []
+                })) || [];
+
+                // Transform activities
+                const activities: ActivitySummary[] = quote.sections.activities?.map((activity: any) => ({
+                    name: activity.name || 'Activity',
+                    duration: activity.duration || '2 hours',
+                    included: true,
+                    category: activity.category || 'adventure'
+                })) || [];
+
+                return {
+                    _id: quote._id.toString(),
+                    partner: {
+                        _id: partner?._id?.toString() || quote.partnerId.toString(),
+                        name: partner?.name || partnerProfile?.businessName || 'Travel Partner',
+                        rating: partnerProfile?.rating || undefined,
+                        totalReviews: partnerProfile?.totalReviews || 0,
+                        logo: partnerProfile?.logo || undefined,
+                        specialties: partnerProfile?.specialties || []
+                    },
+                    status: quote.status as 'SENT' | 'READY',
+                    costs: {
+                        net: quote.costs?.net || 0,
+                        margin: quote.costs?.margin || 0,
+                        final: quote.costs?.final || 0,
+                        perHead: quote.costs?.perHead || 0,
+                        breakdown: {
+                            hotels: hotelsCost,
+                            transport: transportCost,
+                            activities: activitiesCost,
+                            other: otherCost
+                        }
+                    },
+                    hotels,
+                    itinerary: quote.itinerary || [],
+                    activities,
+                    highlights: quote.highlights || [],
+                    inclusions: quote.inclusions || [],
+                    exclusions: quote.exclusions || [],
+                    createdAt: quote.createdAt?.toISOString() || new Date().toISOString(),
+                    validUntil: quote.validUntil?.toISOString()
+                };
+            })
+        );
+
+        // Calculate insights
+        const insights = calculateInsights(transformedQuotes);
+
+        const response = {
+            requirement: {
+                _id: requirement._id.toString(),
+                destination: requirement.destination,
+                duration: requirement.duration,
+                pax: requirement.pax,
+                contactInfo: requirement.contactInfo,
+                createdAt: requirement.createdAt?.toISOString()
+            },
+            quotes: transformedQuotes,
+            insights,
+            compareToken: requirement.compareToken
+        };
+
+        res.json(response);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch quotes for comparison');
+    }
+};
+
+// @desc    Get quotes for comparison by requirement ID (original endpoint)
+// @route   GET /api/quotes/compare/:requirementId
+// @access  Public (with token)
+export const getQuotesForComparison = async (req: Request, res: Response) => {
+    try {
+        const { requirementId } = req.params;
+        const { token } = req.query;
+
+        // Find the requirement and validate compare token
+        const requirement = await Requirement.findById(requirementId);
+
+        if (!requirement) {
+            return res.status(404).json({ error: 'Requirement not found' });
+        }
+
+        // Validate compare token
+        if (!(requirement as any).compareToken || (requirement as any).compareToken !== token) {
+            return res.status(403).json({ error: 'Invalid comparison token' });
+        }
+
+        // Check if token is expired (7 days)
+        const tokenExpiry = new Date((requirement as any).compareTokenGenerated || requirement.createdAt);
+        tokenExpiry.setDate(tokenExpiry.getDate() + 7);
+        
+        if (tokenExpiry < new Date()) {
+            return res.status(410).json({ error: 'Comparison link expired' });
+        }
+
+        // Get all quotes for this requirement with SENT or READY status
+        const quotes = await Quote.find({
+            requirementId,
+            status: { $in: ['SENT', 'READY'] }
+        }).populate('partnerId');
+
+        // Transform quotes for comparison (reuse existing logic from getQuotesForComparisonByToken)
+        const transformedQuotes: QuoteComparison[] = await Promise.all(
+            quotes.map(async (quote) => {
+                const partner = await User.findById(quote.partnerId);
+                const partnerProfile = await PartnerProfile.findOne({ userId: quote.partnerId });
+                
+                // Calculate cost breakdown
+                const hotelsCost = quote.sections.hotels?.reduce((sum: number, hotel: any) => sum + (hotel.total || 0), 0) || 0;
+                const transportCost = quote.sections.transport?.reduce((sum: number, transport: any) => sum + (transport.total || 0), 0) || 0;
+                const activitiesCost = quote.sections.activities?.reduce((sum: number, activity: any) => sum + (activity.total || 0), 0) || 0;
+                const otherCost = (quote.costs?.net || 0) - hotelsCost - transportCost - activitiesCost;
+
+                // Transform hotels
+                const hotels: HotelSummary[] = quote.sections.hotels?.map((hotel: any) => ({
+                    name: hotel.name || 'Hotel',
+                    rating: hotel.rating || undefined,
+                    location: hotel.city || 'Location',
+                    roomType: hotel.roomType || 'Standard',
+                    nights: hotel.nights || 1,
+                    amenities: hotel.amenities || [],
+                    images: hotel.images || []
+                })) || [];
+
+                // Transform activities
+                const activities: ActivitySummary[] = quote.sections.activities?.map((activity: any) => ({
+                    name: activity.name || 'Activity',
+                    duration: activity.duration || '2 hours',
+                    included: true,
+                    category: activity.category || 'adventure'
+                })) || [];
+
+                return {
+                    _id: quote._id.toString(),
+                    partner: {
+                        _id: partner?._id?.toString() || quote.partnerId.toString(),
+                        name: partner?.name || (partnerProfile as any)?.businessName || 'Travel Partner',
+                        rating: (partnerProfile as any)?.rating || undefined,
+                        totalReviews: (partnerProfile as any)?.totalReviews || 0,
+                        logo: (partnerProfile as any)?.logo || undefined,
+                        specialties: (partnerProfile as any)?.specialties || []
+                    },
+                    status: quote.status as 'SENT' | 'READY',
+                    costs: {
+                        net: quote.costs?.net || 0,
+                        margin: quote.costs?.margin || 0,
+                        final: quote.costs?.final || 0,
+                        perHead: quote.costs?.perHead || 0,
+                        breakdown: {
+                            hotels: hotelsCost,
+                            transport: transportCost,
+                            activities: activitiesCost,
+                            other: otherCost
+                        }
+                    },
+                    hotels,
+                    itinerary: quote.itinerary || [],
+                    activities,
+                    highlights: (quote as any).highlights || [],
+                    inclusions: (quote as any).inclusions || [],
+                    exclusions: (quote as any).exclusions || [],
+                    createdAt: quote.createdAt?.toISOString() || new Date().toISOString(),
+                    validUntil: (quote as any).validUntil?.toISOString()
+                };
+            })
+        );
+
+        // Calculate insights
+        const insights = calculateInsights(transformedQuotes);
+
+        const response = {
+            requirement: {
+                _id: requirement._id.toString(),
+                destination: requirement.destination,
+                duration: requirement.duration,
+                pax: requirement.pax,
+                contactInfo: requirement.contactInfo,
+                createdAt: requirement.createdAt?.toISOString()
+            },
+            quotes: transformedQuotes,
+            insights,
+            compareToken: (requirement as any).compareToken
+        };
+
+        res.json(response);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch quotes for comparison');
+    }
+};
+
+// @desc    Accept a quote
+// @route   POST /api/quotes/:quoteId/accept
+// @access  Public (with token)
+export const acceptQuote = async (req: Request, res: Response) => {
+    try {
+        const { quoteId } = req.params;
+        const { token, customerInfo } = req.body;
+
+        // Find the quote
+        const quote = await Quote.findById(quoteId).populate('requirementId');
+
+        if (!quote) {
+            return res.status(404).json({ error: 'Quote not found' });
+        }
+
+        // Validate compare token
+        const requirement = quote.requirementId as any;
+        if (!requirement.compareToken || requirement.compareToken !== token) {
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+
+        // Update quote status
+        quote.status = 'ACCEPTED';
+        await quote.save();
+
+        // Update requirement status
+        requirement.status = 'COMPLETED';
+        await requirement.save();
+
+        // Send confirmation emails (implement email service)
+        // await sendAcceptanceEmail(customerInfo, quote);
+
+        res.json({
+            success: true,
+            message: 'Quote accepted successfully',
+            quoteId: quote._id.toString()
+        });
+
+    } catch (error) {
+        handleError(res, error, 'Failed to accept quote');
+    }
+};
+
+// @desc    Generate compare token for requirement
+// @route   POST /api/quotes/generate-compare-token/:requirementId
+// @access  Private (Agent)
+export const generateCompareToken = async (req: Request, res: Response) => {
+    try {
+        const { requirementId } = req.params;
+
+        const requirement = await Requirement.findById(requirementId);
+        if (!requirement) {
+            return res.status(404).json({ error: 'Requirement not found' });
+        }
+
+        // Generate unique token
+        const token = crypto.randomBytes(32).toString('hex');
+
+        // Update requirement with token
+        requirement.compareToken = token;
+        requirement.compareTokenGenerated = new Date();
+        await requirement.save();
+
+        res.json({
+            compareToken: token,
+            compareUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/quote/compare/${token}`
+        });
+
+    } catch (error) {
+        handleError(res, error, 'Failed to generate compare token');
+    }
+};
+
+// Helper function to calculate comparison insights
+function calculateInsights(quotes: QuoteComparison[]): ComparisonInsights {
+    if (quotes.length === 0) {
+        return {
+            cheapestQuoteId: '',
+            highestRatedQuoteId: '',
+            mostActivitiesQuoteId: '',
+            bestValueQuoteId: '',
+            priceRange: { min: 0, max: 0 },
+            averageRating: 0,
+            totalQuotes: 0
+        };
+    }
+
+    // Find cheapest quote
+    const cheapestQuote = quotes.reduce((min, quote) => 
+        quote.costs.final < min.costs.final ? quote : min
+    );
+
+    // Find highest rated quote
+    const highestRatedQuote = quotes.reduce((max, quote) => 
+        (quote.partner.rating || 0) > (max.partner.rating || 0) ? quote : max
+    );
+
+    // Find quote with most activities
+    const mostActivitiesQuote = quotes.reduce((max, quote) => 
+        quote.activities.length > max.activities.length ? quote : max
+    );
+
+    // Find best value (price:quality ratio)
+    const bestValueQuote = quotes.reduce((best, quote) => {
+        const score = (quote.partner.rating || 1) / (quote.costs.final / 1000);
+        const bestScore = (best.partner.rating || 1) / (best.costs.final / 1000);
+        return score > bestScore ? quote : best;
+    });
+
+    const prices = quotes.map(q => q.costs.final);
+    const ratings = quotes.map(q => q.partner.rating || 0);
+
+    return {
+        cheapestQuoteId: cheapestQuote._id,
+        highestRatedQuoteId: highestRatedQuote._id,
+        mostActivitiesQuoteId: mostActivitiesQuote._id,
+        bestValueQuoteId: bestValueQuote._id,
+        priceRange: {
+            min: Math.min(...prices),
+            max: Math.max(...prices)
+        },
+        averageRating: ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length,
+        totalQuotes: quotes.length
+    };
+}

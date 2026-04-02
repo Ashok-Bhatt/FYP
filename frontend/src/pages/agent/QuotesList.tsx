@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { toast } from 'react-hot-toast';
 import QuoteFilters from '../../components/agent/QuoteFilters';
 import QuoteCard from '../../components/agent/QuoteCard';
 import EmptyState from '../../components/agent/EmptyState';
@@ -17,8 +16,8 @@ const QuotesList: React.FC = () => {
     const [shareDropdown, setShareDropdown] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
-
-    console.log(quotes);
+    const [compareLink, setCompareLink] = useState<string | null>(null);
+    const [generatingLink, setGeneratingLink] = useState(false);
 
     // Helper functions for view data
     const getViewStatusColor = (lastViewedAt: string | null) => {
@@ -47,10 +46,16 @@ const QuotesList: React.FC = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${user?.token}` } };
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/quotes`, config);
-                setQuotes(res.data);
-                setFilteredQuotes(res.data);
+                
+                // Ensure we have an array
+                const quotesData = Array.isArray(res.data) ? res.data : [];
+                setQuotes(quotesData);
+                setFilteredQuotes(quotesData);
             } catch (error) {
                 console.error('Error fetching quotes:', error);
+                // Set empty arrays on error
+                setQuotes([]);
+                setFilteredQuotes([]);
             } finally {
                 setLoading(false);
             }
@@ -62,7 +67,7 @@ const QuotesList: React.FC = () => {
     }, [user]);
 
     useEffect(() => {
-        let result = quotes;
+        let result = Array.isArray(quotes) ? quotes : [];
 
         if (searchTerm) {
             result = result.filter(q =>
@@ -79,35 +84,40 @@ const QuotesList: React.FC = () => {
         setFilteredQuotes(result);
     }, [searchTerm, filterStatus, quotes]);
 
+    // Helper function to fetch quotes (reuse from above)
+    const fetchQuotes = async () => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${user?.token}` } };
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/quotes`, config);
+            
+            const quotesData = Array.isArray(res.data) ? res.data : [];
+            setQuotes(quotesData);
+            setFilteredQuotes(quotesData);
+        } catch (error) {
+            console.error('Error fetching quotes:', error);
+            setQuotes([]);
+            setFilteredQuotes([]);
+        }
+    };
+
     // Setup SSE connection for real-time updates
     useEffect(() => {
         if (!user?.token) return;
 
         const eventSource = new EventSource(
-            `${import.meta.env.VITE_API_URL}/api/quotes/stream/views`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${user.token}`
-                }
-            }
+            `${import.meta.env.VITE_API_URL}/api/quotes/stream/views`
         );
+
+        eventSource.onopen = () => {
+            console.log('SSE connection opened');
+        };
 
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'quote_viewed') {
-                    // Update the specific quote in the list
-                    setQuotes(prevQuotes => 
-                        prevQuotes.map(quote => 
-                            quote._id === data.quoteId 
-                                ? { 
-                                    ...quote, 
-                                    viewCount: (quote.viewCount || 0) + 1,
-                                    lastViewedAt: data.timestamp
-                                }
-                                : quote
-                        )
-                    );
+                    // Refresh quotes when a view event is received
+                    fetchQuotes();
                     
                     // Show toast notification
                     toast.success('Your quote was just viewed!', {
@@ -128,7 +138,7 @@ const QuotesList: React.FC = () => {
         return () => {
             eventSource.close();
         };
-    }, [user?.token]);
+    }, [user?.token, fetchQuotes]);
 
     const downloadPDF = (quote: any) => {
         const getDestinationImage = (destination: string) => {
@@ -344,14 +354,39 @@ const QuotesList: React.FC = () => {
     };
 
     const deleteQuote = async (quoteId: string) => {
-        if (!window.confirm('Delete this quote?')) return;
+        if (!window.confirm('Are you sure you want to delete this quote?')) return;
+
+        const config = {
+            headers: { Authorization: `Bearer ${user?.token}` }
+        };
+
         try {
-            const config = { headers: { Authorization: `Bearer ${user?.token}` } };
             await axios.delete(`${import.meta.env.VITE_API_URL}/api/quotes/${quoteId}`, config);
             setQuotes(prev => prev.filter(q => q._id !== quoteId));
             setFilteredQuotes(prev => prev.filter(q => q._id !== quoteId));
         } catch (error) {
             console.error('Error deleting quote:', error);
+        }
+    };
+
+    const generateCompareLink = async () => {
+        if (!quotes.length) return;
+        
+        setGeneratingLink(true);
+        
+        try {
+            const requirementId = quotes[0].requirementId;
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/quotes/generate-compare-token/${requirementId}`,
+                {},
+                { headers: { Authorization: `Bearer ${user?.token}` } }
+            );
+            
+            setCompareLink(response.data.compareUrl);
+        } catch (error) {
+            console.error('Error generating compare link:', error);
+        } finally {
+            setGeneratingLink(false);
         }
     };
 
@@ -368,13 +403,60 @@ const QuotesList: React.FC = () => {
                         <p className="text-gray-400">Manage and share your travel quotations</p>
                     </div>
 
-                    <QuoteFilters
-                        searchTerm={searchTerm}
-                        filterStatus={filterStatus}
-                        onSearchChange={setSearchTerm}
-                        onFilterChange={setFilterStatus}
-                    />
+                    <div className="flex items-center gap-4">
+                        {quotes.length > 0 && (
+                            <button
+                                onClick={generateCompareLink}
+                                disabled={generatingLink}
+                                className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {generatingLink ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        Generate Compare Link
+                                    </>
+                                )}
+                            </button>
+                        )}
+                        
+                        <QuoteFilters
+                            searchTerm={searchTerm}
+                            filterStatus={filterStatus}
+                            onSearchChange={setSearchTerm}
+                            onFilterChange={setFilterStatus}
+                        />
+                    </div>
                 </div>
+
+                {/* Compare Link Display */}
+                {compareLink && (
+                    <div className="mb-8 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-emerald-400 font-medium mb-1">Comparison Link Generated!</p>
+                                <p className="text-gray-400 text-sm">Share this link with customers to compare quotes</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={compareLink}
+                                    readOnly
+                                    className="px-3 py-2 bg-black/50 border border-emerald-500/30 rounded-lg text-sm text-gray-300 w-64"
+                                />
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(compareLink)}
+                                    className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {filteredQuotes.length === 0 ? (
                     <EmptyState onNavigateToDashboard={() => navigate('/agent/dashboard')} />

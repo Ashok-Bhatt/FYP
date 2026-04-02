@@ -1,9 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaCheckCircle, FaPlaneDeparture } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ThankYou: React.FC = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
+    const getDashboardPath = () => {
+        if (!user) return '/';
+        if (user.role === 'AGENT') return '/agent/dashboard';
+        if (user.role === 'PARTNER') return '/partner';
+        return '/traveler/dashboard';
+    };
+
     return (
         <div className="min-h-screen bg-black flex items-center justify-center p-4">
             <motion.div
@@ -27,11 +38,11 @@ const ThankYou: React.FC = () => {
                 </p>
 
                 <Link
-                    to="/"
+                    to={getDashboardPath()}
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-3 px-6 rounded-xl hover:from-emerald-400 hover:to-emerald-500 transition-all"
                 >
                     <FaPlaneDeparture />
-                    Back to Home
+                    Back to Dashboard
                 </Link>
             </motion.div>
         </div>

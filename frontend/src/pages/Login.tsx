@@ -18,7 +18,7 @@ const Login: React.FC = () => {
             const user = await login(email, password);
             if (user.role === 'AGENT') navigate('/agent');
             else if (user.role === 'PARTNER') navigate('/partner');
-            else navigate('/plan-journey');
+            else navigate('/traveler/dashboard');
         } catch (err) {
             setError(err as string);
         }
