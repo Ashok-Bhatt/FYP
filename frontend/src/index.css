@@ -125,3 +125,9 @@
 .scrollbar-track-zinc-800::-webkit-scrollbar-track {
   background: #27272a;
 }
+
+/* Hide native calendar icon in date inputs */
+.hide-calendar-picker::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}

@@ -80,11 +80,11 @@ const Hero: React.FC<HeroProps> = () => {
                     </span>
                 </div>
 
-                <div ref={textRef} className="overflow-hidden mb-8 max-w-5xl flex flex-wrap justify-center gap-x-3 md:gap-x-6 px-4">
+                <div ref={textRef} className="overflow-hidden pb-3 mb-5 max-w-5xl flex flex-wrap justify-center gap-x-3 md:gap-x-6 px-4">
                     {words.map((word, wordIndex) => (
                         <span key={wordIndex} className="inline-block whitespace-nowrap">
                             {word.split('').map((char, charIndex) => (
-                                <span key={charIndex} className="char inline-block text-white drop-shadow-lg font-serif text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight">{char}</span>
+                                <span key={charIndex} className="char inline-block text-white drop-shadow-lg font-serif text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight py-1">{char}</span>
                             ))}
                         </span>
                     ))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaPlane, FaCalendarAlt, FaUserFriends, FaStar } from 'react-icons/fa';
 import axios from 'axios';
@@ -6,10 +6,11 @@ import { useNavigate } from 'react-router-dom';
 
 const PlanJourney: React.FC = () => {
     const navigate = useNavigate();
+    const dateInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         destination: '',
-        tripType: 'Honeymoon',
+        tripType: '',
         budget: '',
         startDate: '',
         duration: '',
@@ -94,7 +95,9 @@ const PlanJourney: React.FC = () => {
                                     value={formData.tripType}
                                     onChange={handleChange}
                                     className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-emerald-500 outline-none"
+                                    required
                                 >
+                                    <option value="" disabled hidden>Select Trip</option>
                                     <option>Honeymoon</option>
                                     <option>Family</option>
                                     <option>Business</option>
@@ -120,16 +123,36 @@ const PlanJourney: React.FC = () => {
                             {/* Dates */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
-                                <div className="relative">
-                                    <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" />
-                                    <input
-                                        type="date"
-                                        name="startDate"
-                                        value={formData.startDate}
-                                        onChange={handleChange}
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-500 outline-none"
-                                    />
-                                </div>
+                        <div className="relative group">
+                            {/* Interactive Icon Layer */}
+                            <div
+                                className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center cursor-pointer z-30"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                        (dateInputRef.current as any)?.showPicker();
+                                    } catch (err) {
+                                        dateInputRef.current?.focus();
+                                    }
+                                }}
+                            >
+                                <FaCalendarAlt className="text-emerald-500 group-hover:text-emerald-400 transition-colors" />
+                            </div>
+
+
+
+                            {/* Date Input Layer */}
+                            <input
+                                ref={dateInputRef}
+                                type="date"
+                                name="startDate"
+                                min={new Date().toISOString().split('T')[0]}
+                                value={formData.startDate}
+                                onChange={handleChange}
+                                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-emerald-500 outline-none hide-calendar-picker z-10 relative"
+                                required
+                            />
+                        </div>
                             </div>
 
                             {/* Duration */}

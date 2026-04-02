@@ -146,11 +146,11 @@ const Signup: React.FC = () => {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white focus:border-emerald-500 focus:bg-white/10 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-zinc-900 border border-white/10 rounded-xl py-4 px-4 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [&>option]:bg-zinc-900 [&>option]:text-white"
                             >
-                                <option value="AGENT">Travel Agent</option>
-                                <option value="PARTNER">Travel Partner</option>
-                                <option value="USER">Traveler</option>
+                                <option value="AGENT" className="bg-zinc-900 text-white">Travel Agent</option>
+                                <option value="PARTNER" className="bg-zinc-900 text-white">Travel Partner</option>
+                                <option value="USER" className="bg-zinc-900 text-white">Traveler</option>
                             </select>
                         </div>
 
