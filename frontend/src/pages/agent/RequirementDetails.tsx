@@ -360,7 +360,8 @@ const RequirementDetails: React.FC = () => {
                                     <div className="absolute bottom-4 left-4 right-4">
                                         <h3 className="text-xl font-serif font-bold text-white mb-1">{partner.companyName}</h3>
                                         <p className="text-xs text-gray-300 flex items-center gap-1">
-                                            <FaMapMarkerAlt className="text-emerald-400" /> {partner.destinations.join(', ')}
+                                            <FaMapMarkerAlt className="text-emerald-400" /> 
+                                            {partner.address?.city ? `${partner.address.city}${partner.address?.country ? ', ' + partner.address.country : ''}` : 'Location not specified'}
                                         </p>
                                     </div>
                                 </div>

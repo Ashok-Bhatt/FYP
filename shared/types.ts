@@ -108,22 +108,56 @@ export interface PartnerProfile {
     _id?: string;
     userId: string;
     companyName: string;
-    destinations?: string[];
-    type: 'DMC' | 'Hotel' | 'CabProvider' | 'Mixed';
+    destinations?: string;
+    type: 'DMC' | 'Hotel' | 'Mixed';
     specializations?: string[];
     budgetRange?: {
-        min: number;
-        max: number;
+        min?: number;
+        max?: number;
     };
-    rating: number;
-    tripsHandled: number;
-    description?: string;
+    rating?: number;
+    tripsHandled?: number;
+    description: string;
     description_embedding?: number[];
     images?: string[];
     amenities?: string[];
-    sightSeeing?: string[];
     startingPrice?: number;
-    reviews: number;
+    reviews?: number;
+    address?: {
+        street: string;
+        city: string;
+        pinCode: string;
+        country: string;
+    };
+    starRating?: number;
+    roomTypes?: Array<{
+        name: string;
+        price: number;
+    }>;
+    contactInfo?: {
+        phone: string;
+        website?: string;
+        email?: string;
+        facebook?: string;
+        instagram?: string;
+        twitter?: string;
+        linkedin?: string;
+    };
+    activities?: Array<{
+        name: string;
+        category: string;
+        duration: string;
+        price: number;
+        description: string;
+    }>;
+    checkIn?: string;
+    checkOut?: string;
+    sightSeeings?: Array<{
+        name: string;
+        images?: string[];
+        description: string;
+        entryFee?: number;
+    }>;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }

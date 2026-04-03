@@ -123,16 +123,19 @@ export const generateQuotes = async (req: Request, res: Response) => {
             const duration = requirement.duration || 6;
             const adults = requirement.pax?.adults || 2;
 
-            // 1. Add Hotel based on partner's starting price
+            // 1. Add Hotel based on partner's room types and pricing
             if (partner.type === 'Hotel' || partner.type === 'DMC' || partner.type === 'Mixed') {
-                const hotelPrice = partner.startingPrice || 5000;
+                // Use the cheapest room type as default
+                const roomTypes = partner.roomTypes || [];
+                const defaultRoom = roomTypes.length > 0 ? roomTypes[0] : { name: 'Deluxe Room', price: partner.startingPrice || 5000 };
+                const hotelPrice = defaultRoom.price;
                 const nights = duration - 1;
                 const roomCost = hotelPrice * nights;
 
                 quoteSections.hotels.push({
                     name: partner.companyName,
-                    city: partner.destinations?.[0] || requirement.destination || '',
-                    roomType: 'Deluxe Room',
+                    city: partner.destinations || requirement.destination || '',
+                    roomType: defaultRoom.name,
                     nights: nights,
                     unitPrice: hotelPrice,
                     qty: 1,
@@ -141,8 +144,8 @@ export const generateQuotes = async (req: Request, res: Response) => {
                 netCost += roomCost;
             }
 
-            // 2. Add Transport
-            if (partner.type === 'CabProvider' || partner.type === 'DMC' || partner.type === 'Mixed') {
+            // 2. Add Transport (only for DMC and Mixed types since CabProvider is removed)
+            if (partner.type === 'DMC' || partner.type === 'Mixed') {
                 const transportPrice = 3000; // Default per day
                 const days = duration;
                 const transportCost = transportPrice * days;
@@ -156,22 +159,27 @@ export const generateQuotes = async (req: Request, res: Response) => {
                 netCost += transportCost;
             }
 
-            // 3. Add Activities based on sightseeing
-            if (partner.sightSeeing && partner.sightSeeing.length > 0) {
-                const activitiesToAdd = partner.sightSeeing.slice(0, 3);
-                activitiesToAdd.forEach((sight: string, index: number) => {
-                    const activityPrice = 1500 + (index * 500); // Varying prices
-                    const activityCost = activityPrice * adults;
+            // 3. Add Activities based on partner's activities and sightseeings
+            // Use activities first, then sightseeings as fallback
+            const activitiesToAdd = partner.activities && partner.activities.length > 0 
+                ? partner.activities.slice(0, 3) 
+                : (partner.sightSeeings && partner.sightSeeings.length > 0 
+                    ? partner.sightSeeings.slice(0, 3) 
+                    : []);
 
-                    quoteSections.activities.push({
-                        name: sight,
-                        unitPrice: activityPrice,
-                        qty: adults,
-                        total: activityCost,
-                    });
-                    netCost += activityCost;
+            activitiesToAdd.forEach((activity: any, index: number) => {
+                const activityName = activity.name || 'Activity';
+                const activityPrice = activity.entryFee || 1500 + (index * 500); // Use entryFee if available
+                const activityCost = activityPrice * adults;
+
+                quoteSections.activities.push({
+                    name: activityName,
+                    unitPrice: activityPrice,
+                    qty: adults,
+                    total: activityCost,
                 });
-            }
+                netCost += activityCost;
+            });
 
             // Create Quote Record
             const quote = await Quote.create({
@@ -397,7 +405,7 @@ export const getPublicQuote = async (req: Request, res: Response) => {
     try {
         const quote = await Quote.findOne({ shareToken: req.params.token })
             .populate('requirementId', 'destination tripType startDate duration pax contactInfo')
-            .populate('partnerId', 'companyName rating type');
+            .populate('partnerId', 'companyName starRating type');
 
         if (!quote) {
             res.status(404).json({ message: 'Quote not found or link expired' });
@@ -480,7 +488,7 @@ export const generateItinerary = async (req: Request, res: Response) => {
             .populate('requirementId')
             .populate({
                 path: 'partnerId',
-                select: 'companyName sightSeeing',
+                select: 'companyName sightSeeings activities',
             });
 
         if (!quote) {
@@ -499,14 +507,20 @@ export const generateItinerary = async (req: Request, res: Response) => {
         const children = req_data?.pax?.children || 0;
         const description = req_data?.description || '';
         const hotelName = (quote.sections?.hotels?.[0] as any)?.name || partner_data?.companyName || 'the hotel';
-        const sightseeing: string[] = partner_data?.sightSeeing || [];
+        
+        // Extract sightseeing and activities from new schema
+        const sightseeing: string[] = partner_data?.sightSeeings?.map((s: any) => s.name) || [];
+        const partnerActivities: string[] = partner_data?.activities?.map((a: any) => a.name) || [];
         const activities: string[] = (quote.sections?.activities || []).map((a: any) => a.name);
+        
+        // Combine partner activities with quote activities
+        const allActivities = [...partnerActivities, ...activities];
 
         // Call Groq LLM
         const itinerary = await groqGenerateItinerary(
             destination, duration, tripType,
             adults, children, hotelName,
-            sightseeing, activities, description
+            sightseeing, allActivities, description
         );
 
         // Persist to the quote document
@@ -616,10 +630,10 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
                     partner: {
                         _id: partner?._id?.toString() || quote.partnerId.toString(),
                         name: partner?.name || partnerProfile?.businessName || 'Travel Partner',
-                        rating: partnerProfile?.rating || undefined,
-                        totalReviews: partnerProfile?.totalReviews || 0,
+                        rating: partnerProfile?.starRating || undefined,
+                        totalReviews: partnerProfile?.reviews || 0,
                         logo: partnerProfile?.logo || undefined,
-                        specialties: partnerProfile?.specialties || []
+                        specialties: partnerProfile?.specializations || []
                     },
                     status: quote.status as 'SENT' | 'READY',
                     costs: {
@@ -739,10 +753,10 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
                     partner: {
                         _id: partner?._id?.toString() || quote.partnerId.toString(),
                         name: partner?.name || (partnerProfile as any)?.businessName || 'Travel Partner',
-                        rating: (partnerProfile as any)?.rating || undefined,
-                        totalReviews: (partnerProfile as any)?.totalReviews || 0,
+                        rating: (partnerProfile as any)?.starRating || undefined,
+                        totalReviews: (partnerProfile as any)?.reviews || 0,
                         logo: (partnerProfile as any)?.logo || undefined,
-                        specialties: (partnerProfile as any)?.specialties || []
+                        specialties: (partnerProfile as any)?.specializations || []
                     },
                     status: quote.status as 'SENT' | 'READY',
                     costs: {

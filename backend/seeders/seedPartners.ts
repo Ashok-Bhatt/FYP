@@ -15,8 +15,20 @@ const seedPartners = async () => {
     try {
         // Clear existing international partners
         const intlDestinations = ["Maldives", "Paris", "France", "Bali", "Indonesia", "Dubai", "UAE", "St. Moritz", "Switzerland", "Zurich", "Lucerne", "Tokyo", "Japan", "Singapore", "Santorini", "Greece", "Bora Bora", "French Polynesia"];
+        
+        // Get existing partner profiles for international destinations
+        const existingProfiles = await PartnerProfile.find({ destinations: { $in: intlDestinations } });
+        const userIdsToDelete = existingProfiles.map(p => p.userId);
+        
+        // Delete partner profiles
         await PartnerProfile.deleteMany({ destinations: { $in: intlDestinations } });
-        console.log('Cleared existing international partners');
+        
+        // Delete corresponding users
+        if (userIdsToDelete.length > 0) {
+            await User.deleteMany({ _id: { $in: userIdsToDelete } });
+        }
+        
+        console.log('Cleared existing international partners and users');
 
         // Fetch bulk embeddings for all descriptions
         console.log('Generating embeddings in batch for international partners...');
@@ -29,18 +41,14 @@ const seedPartners = async () => {
             const password = 'partner123';
             const { ...profileData } = partnerData as any;
 
-            // Create User
-            let user = await User.findOne({ email });
-
-            if (!user) {
-                const hashedPassword = await bcrypt.hash(password, 10);
-                user = await User.create({
-                    name: profileData.companyName,
-                    email,
-                    password: hashedPassword,
-                    role: 'PARTNER',
-                });
-            }
+            // Create User (no need to check for existing since we just deleted them)
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = await User.create({
+                name: profileData.companyName,
+                email,
+                password: hashedPassword,
+                role: 'PARTNER',
+            });
 
             // Create Partner Profile
             await PartnerProfile.create({

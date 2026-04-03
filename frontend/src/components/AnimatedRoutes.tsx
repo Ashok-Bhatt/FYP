@@ -24,6 +24,7 @@ import AgentAnalytics from '../pages/agent/AgentAnalytics';
 // Partner Pages
 import PartnerDashboard from '../pages/partner/PartnerDashboard';
 import Inventory from '../pages/partner/Inventory';
+import PartnerProfile from '../pages/partner/PartnerProfile';
 
 // Traveler Pages
 import TravelerDashboard from '../pages/traveler/TravelerDashboard';
@@ -74,7 +75,9 @@ const AnimatedRoutes: React.FC = () => {
                     </ProtectedRoute>
                 }>
                     <Route index element={<PartnerDashboard />} />
+                    <Route path="dashboard" element={<PartnerDashboard />} />
                     <Route path="inventory" element={<Inventory />} />
+                    <Route path="profile" element={<PartnerProfile />} />
                 </Route>
 
                 {/* Traveler Routes */}
