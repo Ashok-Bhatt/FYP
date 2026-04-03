@@ -42,11 +42,10 @@ const seedPartners = async () => {
             const { ...profileData } = partnerData as any;
 
             // Create User (no need to check for existing since we just deleted them)
-            const hashedPassword = await bcrypt.hash(password, 10);
             const user = await User.create({
                 name: profileData.companyName,
                 email,
-                password: hashedPassword,
+                password, // Let the User model pre-save hook handle hashing
                 role: 'PARTNER',
             });
 

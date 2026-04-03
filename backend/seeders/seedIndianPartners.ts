@@ -31,11 +31,10 @@ const seedIndianPartners = async () => {
             let user = await User.findOne({ email });
 
             if (!user) {
-                const hashedPassword = await bcrypt.hash(password, 10);
                 user = await User.create({
                     name: profileData.companyName,
                     email,
-                    password: hashedPassword,
+                    password, // Let the User model pre-save hook handle hashing
                     role: 'PARTNER',
                 });
             }
