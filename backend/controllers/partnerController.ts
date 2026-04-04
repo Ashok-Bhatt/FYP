@@ -6,6 +6,7 @@ import QuoteView from '../models/QuoteView';
 import { handleError } from '../utils/errorHandler';
 import { generateEmbedding } from '../utils/geminiUtils';
 import { cosineSimilarity } from '../utils/vectorUtils';
+import { uploadBase64Image } from '../utils/cloudinary';
 
 // @desc    Get current partner profile
 // @route   GET /api/partners/profile
@@ -498,5 +499,70 @@ export const getPartnerQuotes = async (req: Request, res: Response) => {
         });
     } catch (error: unknown) {
         handleError(res, error, 'Error fetching quotes');
+    }
+};
+
+// @desc    Add partner image (hotel or sightseeing)
+// @route   POST /api/partners/image
+// @access  Private (Partner)
+export const addPartnerImage = async (req: Request, res: Response) => {
+    try {
+        const { companyName, imageUrl, base64Image, sightseeingName } = req.body;
+        
+        const profile = await PartnerProfile.findOne({ userId: req.user!._id, companyName });
+        if (!profile) return res.status(404).json({ message: 'Hotel not found' });
+
+        let finalImageUrl = imageUrl;
+        if (base64Image) {
+            finalImageUrl = await uploadBase64Image(base64Image);
+        }
+
+        if (!finalImageUrl) return res.status(400).json({ message: 'No image provided' });
+
+        if (sightseeingName) {
+            const ss = profile.sightSeeings.find(s => s.name === sightseeingName);
+            if (ss) {
+                if (!ss.images) ss.images = [];
+                ss.images.push(finalImageUrl);
+            } else {
+                return res.status(404).json({ message: 'Sightseeing not found' });
+            }
+        } else {
+            if (!profile.images) profile.images = [];
+            profile.images.push(finalImageUrl);
+        }
+
+        await profile.save();
+        res.json(profile);
+    } catch (error: unknown) {
+        handleError(res, error, 'Error adding image');
+    }
+};
+
+// @desc    Remove partner image
+// @route   DELETE /api/partners/image
+// @access  Private (Partner)
+export const removePartnerImage = async (req: Request, res: Response) => {
+    try {
+        const { companyName, imageUrl, sightseeingName } = req.body;
+        
+        const profile = await PartnerProfile.findOne({ userId: req.user!._id, companyName });
+        if (!profile) return res.status(404).json({ message: 'Hotel not found' });
+
+        if (sightseeingName) {
+            const ss = profile.sightSeeings.find(s => s.name === sightseeingName);
+            if (ss && ss.images) {
+                ss.images = ss.images.filter(img => img !== imageUrl);
+            }
+        } else {
+            if (profile.images) {
+                profile.images = profile.images.filter(img => img !== imageUrl);
+            }
+        }
+
+        await profile.save();
+        res.json(profile);
+    } catch (error: unknown) {
+        handleError(res, error, 'Error removing image');
     }
 };

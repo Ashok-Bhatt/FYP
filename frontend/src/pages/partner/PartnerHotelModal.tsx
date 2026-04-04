@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaSave, FaSpinner, FaCheckCircle, FaHotel, FaPhone, FaMapMarkerAlt, FaStar, FaMoneyBillWave, FaClock, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaSave, FaSpinner, FaCheckCircle, FaHotel, FaPhone, FaMapMarkerAlt, FaStar, FaMoneyBillWave, FaClock, FaTimes, FaPlus, FaImage, FaTrash, FaMap } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 interface PartnerProfileData {
@@ -61,6 +61,175 @@ interface PartnerHotelModalProps {
     initialData: Partial<PartnerProfileData>;
     onSuccess: () => void;
 }
+
+const ImageManager: React.FC<{
+    images: string[];
+    companyName?: string;
+    sightseeingName?: string;
+    onImageAdded: (url: string) => void;
+    onImageRemoved: (url: string) => void;
+    isSaved: boolean;
+}> = ({ images, companyName, sightseeingName, onImageAdded, onImageRemoved, isSaved }) => {
+    const { user } = useAuth();
+    const [uploading, setUploading] = useState(false);
+    const [linkInput, setLinkInput] = useState('');
+    const [activeTab, setActiveTab] = useState<'link' | 'local'>('link');
+
+    const handleAddLink = async () => {
+        if (!linkInput) return;
+        if (!isSaved) return alert('Please save the hotel first to manage images');
+        
+        setUploading(true);
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/partners/image`, {
+                companyName,
+                sightseeingName,
+                imageUrl: linkInput
+            }, {
+                headers: { Authorization: `Bearer ${user?.token}` }
+            });
+            onImageAdded(linkInput);
+            setLinkInput('');
+        } catch (error) {
+            console.error('Error adding image:', error);
+            alert('Failed to add image');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
+        if (!isSaved) return alert('Please save the hotel first to manage images');
+        
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64String = reader.result as string;
+            setUploading(true);
+            try {
+                const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/partners/image`, {
+                    companyName,
+                    sightseeingName,
+                    base64Image: base64String
+                }, {
+                    headers: { Authorization: `Bearer ${user?.token}` }
+                });
+                
+                // response.data holds the updated profile. Instead of extracting, just emit success and the parent can reload or we append.
+                // Assuming the new image is the last one in the updated array
+                let updatedImages;
+                if (sightseeingName) {
+                    const ss = response.data.sightSeeings.find((s: any) => s.name === sightseeingName);
+                    updatedImages = ss?.images || [];
+                } else {
+                    updatedImages = response.data.images || [];
+                }
+                const newImgUrl = updatedImages[updatedImages.length - 1];
+                if (newImgUrl) onImageAdded(newImgUrl);
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Failed to upload image');
+            } finally {
+                setUploading(false);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemoveImage = async (url: string) => {
+        if (!isSaved) return alert('Please save the hotel first to manage images');
+        if (!confirm('Are you sure you want to remove this image?')) return;
+        
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/api/partners/image`, {
+                data: { companyName, sightseeingName, imageUrl: url },
+                headers: { Authorization: `Bearer ${user?.token}` }
+            });
+            onImageRemoved(url);
+        } catch (error) {
+            console.error('Error removing image:', error);
+            alert('Failed to remove image');
+        }
+    };
+
+    return (
+        <div className="mt-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+            <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
+                <FaImage className="mr-2 text-emerald-500" />
+                Manage Images
+            </h4>
+            
+            {images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {images.map((imgUrl, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden border border-gray-600 aspect-video">
+                            <img src={imgUrl} alt="Preview" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(imgUrl)}
+                                    className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                >
+                                    <FaTrash size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+            
+            <div className="flex gap-2 mb-2 border-b border-gray-700 pb-2">
+                <button 
+                    type="button" 
+                    onClick={() => setActiveTab('link')} 
+                    className={`text-sm px-2 py-1 ${activeTab === 'link' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-gray-400'}`}
+                >
+                    Add by Link
+                </button>
+                <button 
+                    type="button" 
+                    onClick={() => setActiveTab('local')} 
+                    className={`text-sm px-2 py-1 ${activeTab === 'local' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-gray-400'}`}
+                >
+                    Upload Local
+                </button>
+            </div>
+            
+            {activeTab === 'link' ? (
+                <div className="flex gap-2">
+                    <input
+                        type="url"
+                        placeholder="Image URL"
+                        value={linkInput}
+                        onChange={(e) => setLinkInput(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white text-sm"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleAddLink}
+                        disabled={uploading || !linkInput}
+                        className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 text-sm flex items-center"
+                    >
+                        {uploading ? <FaSpinner className="animate-spin" /> : 'Add'}
+                    </button>
+                </div>
+            ) : (
+                <div className="flex items-center">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        disabled={uploading}
+                        className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-white hover:file:bg-emerald-600 disabled:opacity-50"
+                    />
+                    {uploading && <FaSpinner className="animate-spin text-emerald-500 ml-2" />}
+                </div>
+            )}
+            {!isSaved && <p className="text-xs text-yellow-500 mt-2">Please save the hotel first to manage images.</p>}
+        </div>
+    );
+};
 
 const PartnerHotelModal: React.FC<PartnerHotelModalProps> = ({ isOpen, onClose, initialData, onSuccess }) => {
     const { user } = useAuth();
@@ -139,7 +308,8 @@ const PartnerHotelModal: React.FC<PartnerHotelModalProps> = ({ isOpen, onClose, 
             // Sanitize payload to strip out any trailing empty array items
             const payload = {
                 ...profile,
-                roomTypes: profile.roomTypes?.filter(r => r.name && r.name.trim() !== '')
+                roomTypes: profile.roomTypes?.filter(r => r.name && r.name.trim() !== ''),
+                sightSeeings: profile.sightSeeings?.filter(s => s.name && s.name.trim() !== '')
             };
 
             const config = { headers: { Authorization: `Bearer ${user?.token}` } };
@@ -594,6 +764,101 @@ const PartnerHotelModal: React.FC<PartnerHotelModalProps> = ({ isOpen, onClose, 
                                 />
                             </div>
                         </div>
+                    </motion.div>
+
+                    {/* Hotel Images */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.45 }}
+                        className="bg-gray-900 bg-opacity-50 backdrop-blur-lg rounded-xl p-6 border border-gray-800"
+                    >
+                        <h2 className="text-2xl font-semibold mb-6 flex items-center">
+                            <FaImage className="mr-3 text-emerald-500" />
+                            Hotel Images
+                        </h2>
+                        <ImageManager
+                            images={profile.images || []}
+                            companyName={profile.companyName}
+                            isSaved={!!profile._id}
+                            onImageAdded={(url) => setProfile(prev => ({ ...prev, images: [...(prev.images || []), url] }))}
+                            onImageRemoved={(url) => setProfile(prev => ({ ...prev, images: (prev.images || []).filter(u => u !== url) }))}
+                        />
+                    </motion.div>
+
+                    {/* Sightseeings */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="bg-gray-900 bg-opacity-50 backdrop-blur-lg rounded-xl p-6 border border-gray-800"
+                    >
+                        <h2 className="text-2xl font-semibold mb-6 flex items-center">
+                            <FaMap className="mr-3 text-emerald-500" />
+                            Sightseeings
+                        </h2>
+                        
+                        {(profile.sightSeeings || []).map((ss, index) => (
+                            <div key={index} className="mb-6 p-4 bg-gray-800 rounded-xl border border-gray-700 space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-lg font-bold">Sightseeing #{index + 1}</h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeArrayItem('sightSeeings', index)}
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Name"
+                                        value={ss.name}
+                                        onChange={(e) => handleArrayChange('sightSeeings', index, 'name', e.target.value)}
+                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white"
+                                    />
+                                    <input
+                                        type="number"
+                                        placeholder="Entry Fee (Optional)"
+                                        value={ss.entryFee || ''}
+                                        onChange={(e) => handleArrayChange('sightSeeings', index, 'entryFee', Number(e.target.value))}
+                                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white"
+                                    />
+                                </div>
+                                <textarea
+                                    placeholder="Description"
+                                    value={ss.description}
+                                    onChange={(e) => handleArrayChange('sightSeeings', index, 'description', e.target.value)}
+                                    rows={2}
+                                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-emerald-500 text-white"
+                                />
+
+                                <ImageManager
+                                    images={ss.images || []}
+                                    companyName={profile.companyName}
+                                    sightseeingName={ss.name}
+                                    isSaved={!!profile._id}
+                                    onImageAdded={(url) => {
+                                        const updatedSS = { ...ss, images: [...(ss.images || []), url] };
+                                        handleArrayChange('sightSeeings', index, 'images', updatedSS.images);
+                                    }}
+                                    onImageRemoved={(url) => {
+                                        const updatedSS = { ...ss, images: (ss.images || []).filter(u => u !== url) };
+                                        handleArrayChange('sightSeeings', index, 'images', updatedSS.images);
+                                    }}
+                                />
+                            </div>
+                        ))}
+                        
+                        <button
+                            type="button"
+                            onClick={() => addArrayItem('sightSeeings', { name: '', description: '', entryFee: 0, images: [] })}
+                            className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+                        >
+                            Add Sightseeing
+                        </button>
                     </motion.div>
 
                     {/* Submit Button */}
