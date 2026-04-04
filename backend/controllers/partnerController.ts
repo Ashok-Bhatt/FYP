@@ -12,7 +12,7 @@ import { cosineSimilarity } from '../utils/vectorUtils';
 // @access  Private (Partner)
 export const getMyProfile = async (req: Request, res: Response) => {
     try {
-        const profile = await PartnerProfile.findOne({ userId: req.user!._id });
+        const profile = await PartnerProfile.find({ userId: req.user!._id });
         res.json(profile);
     } catch (error: unknown) {
         handleError(res, error);
@@ -31,7 +31,10 @@ export const updateProfile = async (req: Request, res: Response) => {
             checkIn, checkOut, sightSeeings 
         } = req.body;
 
-        let profile = await PartnerProfile.findOne({ userId: req.user!._id });
+        let profile = null;
+        if (req.body._id) {
+            profile = await PartnerProfile.findOne({ _id: req.body._id, userId: req.user!._id });
+        }
 
         // Generate comprehensive embedding using all relevant fields
         let description_embedding: number[] | undefined;
@@ -212,13 +215,13 @@ export const getPartnerDashboard = async (req: Request, res: Response) => {
                                     $sum: {
                                         $cond: [
                                             { $eq: ['$status', 'ACCEPTED'] },
-                                            '$costs.final',
+                                            '$costs.net',
                                             0
                                         ]
                                     }
                                 },
                                 totalViews: { $sum: '$viewCount' },
-                                avgQuoteValue: { $avg: '$costs.final' }
+                                avgQuoteValue: { $avg: '$costs.net' }
                             }
                         }
                     ],
@@ -243,7 +246,7 @@ export const getPartnerDashboard = async (req: Request, res: Response) => {
                                     $sum: {
                                         $cond: [
                                             { $eq: ['$status', 'ACCEPTED'] },
-                                            '$costs.final',
+                                            '$costs.net',
                                             0
                                         ]
                                     }
@@ -261,7 +264,7 @@ export const getPartnerDashboard = async (req: Request, res: Response) => {
                                 quoteId: '$_id',
                                 title: 1,
                                 status: 1,
-                                amount: '$costs.final',
+                                amount: '$costs.net',
                                 updatedAt: 1,
                                 action: {
                                     $switch: {
@@ -285,7 +288,7 @@ export const getPartnerDashboard = async (req: Request, res: Response) => {
                                 title: 1,
                                 viewCount: 1,
                                 status: 1,
-                                amount: '$costs.final'
+                                amount: '$costs.net'
                             }
                         }
                     ],
@@ -301,7 +304,7 @@ export const getPartnerDashboard = async (req: Request, res: Response) => {
                                     $sum: {
                                         $cond: [
                                             { $eq: ['$status', 'ACCEPTED'] },
-                                            '$costs.final',
+                                            '$costs.net',
                                             0
                                         ]
                                     }
@@ -461,8 +464,10 @@ export const getPartnerQuotes = async (req: Request, res: Response) => {
                 title: quote.title || `${req?.destination || 'Trip'} - ${req?.tripType || 'Travel'}`,
                 status: quote.status,
                 costs: {
-                    final: quote.costs?.final || 0,
-                    perHead: quote.costs?.perHead || 0
+                    final: quote.costs?.net || quote.costs?.final || 0,
+                    perHead: quote.costs?.net && req?.pax 
+                        ? quote.costs.net / ((req.pax.adults || 1) + (req.pax.children || 0))
+                        : (quote.costs?.perHead || 0)
                 },
                 viewCount: viewCount,
                 lastViewedAt: quote.lastViewedAt || null,

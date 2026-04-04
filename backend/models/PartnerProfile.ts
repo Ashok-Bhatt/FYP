@@ -76,7 +76,6 @@ const partnerProfileSchema = new Schema<IPartnerProfile>({
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        unique: true,
     },
     companyName: {
         type: String,

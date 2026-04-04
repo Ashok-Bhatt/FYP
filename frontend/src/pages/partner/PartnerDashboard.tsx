@@ -13,6 +13,7 @@ import {
     FaCalendarAlt
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardStats {
     totalQuotes: number;
@@ -61,7 +62,7 @@ interface DashboardData {
     monthlyTrend: MonthlyTrend[];
     mostViewedQuote: MostViewedQuote | null;
     topDestination: TopDestination | null;
-    suggestions: string[];
+    topDestination: TopDestination | null;
 }
 
 const PartnerDashboard: React.FC = () => {
@@ -120,10 +121,16 @@ const PartnerDashboard: React.FC = () => {
         );
     }
 
-    const { stats, statusBreakdown, recentActivity, monthlyTrend, mostViewedQuote, topDestination, suggestions } = dashboardData;
+    const { stats, statusBreakdown, recentActivity, monthlyTrend, mostViewedQuote, topDestination } = dashboardData;
 
     const maxQuotes = Math.max(...monthlyTrend.map(m => m.quotes), 1);
     const maxRevenue = Math.max(...monthlyTrend.map(m => m.revenue), 1);
+
+    const funnelData = Object.entries(statusBreakdown).map(([status, count]) => ({
+        name: status,
+        value: count,
+    }));
+    const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
     return (
         <div className="p-6 space-y-6">
@@ -186,26 +193,43 @@ const PartnerDashboard: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Status & Activity */}
                 <div className="space-y-6">
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-zinc-900/80 border border-white/10 rounded-2xl p-6">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                             <FaChartLine className="text-emerald-400" />Quote Status
                         </h3>
+                        <div className="h-48 relative mb-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={funnelData}
+                                        dataKey="value"
+                                        innerRadius={50}
+                                        outerRadius={70}
+                                        paddingAngle={8}
+                                        stroke="none"
+                                    >
+                                        {funnelData.map((_, i) => (
+                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px' }}
+                                        itemStyle={{ color: '#fff', fontSize: '12px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
                         <div className="space-y-3">
-                            {Object.entries(statusBreakdown).map(([status, count]) => (
-                                <div key={status} className="flex items-center justify-between">
+                            {funnelData.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full ${
-                                            status === 'ACCEPTED' ? 'bg-emerald-400' :
-                                            status === 'DECLINED' ? 'bg-red-400' :
-                                            status === 'SENT_TO_USER' ? 'bg-blue-400' :
-                                            status === 'READY' ? 'bg-yellow-400' : 'bg-gray-400'
-                                        }`} />
-                                        <span className="text-gray-300 text-sm">{status.replace(/_/g, ' ')}</span>
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                                        <span className="text-gray-300 text-sm">{item.name.replace(/_/g, ' ')}</span>
                                     </div>
-                                    <span className="text-white font-medium">{count}</span>
+                                    <span className="text-white font-medium">{item.value}</span>
                                 </div>
                             ))}
                         </div>
@@ -300,26 +324,6 @@ const PartnerDashboard: React.FC = () => {
                     )}
                 </div>
 
-                {/* Suggestions */}
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-zinc-900/80 border border-white/10 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <FaLightbulb className="text-yellow-400" />Suggestions
-                    </h3>
-                    <div className="space-y-4">
-                        {suggestions.length === 0 ? (
-                            <p className="text-gray-400 text-sm">No suggestions at the moment. Keep up the good work!</p>
-                        ) : (
-                            suggestions.map((suggestion, index) => (
-                                <div key={index} className="p-4 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/20 rounded-xl">
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-yellow-500/20 rounded-lg shrink-0"><FaLightbulb className="text-yellow-400" /></div>
-                                        <p className="text-gray-300 text-sm leading-relaxed">{suggestion}</p>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </motion.div>
             </div>
         </div>
     );
