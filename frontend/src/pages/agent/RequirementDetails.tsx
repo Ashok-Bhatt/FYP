@@ -451,7 +451,11 @@ const RequirementDetails: React.FC = () => {
                                     <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-2">{viewingPartner.companyName}</h2>
                                     <div className="flex items-center gap-4 text-sm">
                                         <p className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                            <FaMapMarkerAlt /> {viewingPartner.destinations.join(', ')}
+                                            <FaMapMarkerAlt /> {
+                                                Array.isArray(viewingPartner.destinations) 
+                                                ? viewingPartner.destinations.join(', ') 
+                                                : (viewingPartner.destinations || viewingPartner.address?.city || 'Location not specified')
+                                            }
                                         </p>
                                         <p className="text-yellow-400 flex items-center gap-1 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20">
                                             <FaStar /> {viewingPartner.rating} Rating
@@ -490,10 +494,10 @@ const RequirementDetails: React.FC = () => {
                                             Nearby Sightseeing
                                         </h3>
                                         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {viewingPartner.sightSeeing && viewingPartner.sightSeeing.map((sight: string, i: number) => (
+                                            {viewingPartner.sightSeeings && viewingPartner.sightSeeings.map((sight: any, i: number) => (
                                                 <li key={i} className="flex items-center gap-2 text-gray-300">
                                                     <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                                                    {sight}
+                                                    {sight.name || sight}
                                                 </li>
                                             ))}
                                         </ul>

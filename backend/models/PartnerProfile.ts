@@ -81,6 +81,10 @@ const partnerProfileSchema = new Schema<IPartnerProfile>({
         type: String,
         required: true,
     },
+    destinations: {
+        type: String,
+        default: '',
+    },
     type: {
         type: String,
         enum: ['DMC', 'Hotel', 'Mixed'],

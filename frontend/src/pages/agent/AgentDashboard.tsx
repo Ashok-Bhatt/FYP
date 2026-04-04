@@ -11,26 +11,35 @@ import {
 import { Link } from 'react-router-dom';
 
 const AgentDashboard: React.FC = () => {
-    const [requirements, setRequirements] = useState<Requirement[]>([]);
+    const [requirements, setRequirements] = useState<any[]>([]);
+    const [quotes, setQuotes] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const { user } = useAuth();
     const token = user?.token || '';
 
     useEffect(() => {
-        fetchRequirements();
-    }, []);
+        fetchData();
+    }, [token]);
 
-    const fetchRequirements = async () => {
+    const fetchData = async () => {
         try {
             if (!token) return;
 
-            const { data } = await axios.get<Requirement[]>(
-                `${import.meta.env.VITE_API_URL}/api/requirements`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setRequirements(data);
+            const [reqRes, quoteRes] = await Promise.all([
+                axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/requirements`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                ),
+                axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/quotes`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                )
+            ]);
+
+            setRequirements(reqRes.data);
+            setQuotes(quoteRes.data);
         } catch (error) {
-            console.error('Error fetching requirements:', error);
+            console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
@@ -42,11 +51,27 @@ const AgentDashboard: React.FC = () => {
                 <div className="text-center">
                     <FaSpinner className="animate-spin text-4xl text-emerald-400 mx-auto mb-4" />
                     <div className="text-white text-xl font-medium">Preparing your dashboard...</div>
-                    <div className="text-gray-400 text-sm mt-2">Fetching latest travel requirements</div>
+                    <div className="text-gray-400 text-sm mt-2">Fetching latest travel data</div>
                 </div>
             </div>
         );
     }
+
+    // Calculate stats based on quotes status
+    const stats = {
+        total: requirements.length,
+        new: requirements.filter(req => !quotes.some(q => 
+            (q.requirementId?._id || q.requirementId) === req._id
+        )).length,
+        inProgress: requirements.filter(req => {
+            const reqQuotes = quotes.filter(q => (q.requirementId?._id || q.requirementId) === req._id);
+            return reqQuotes.length > 0 && !reqQuotes.some(q => q.status === 'ACCEPTED');
+        }).length,
+        completed: requirements.filter(req => {
+            const reqQuotes = quotes.filter(q => (q.requirementId?._id || q.requirementId) === req._id);
+            return reqQuotes.some(q => q.status === 'ACCEPTED');
+        }).length
+    };
 
     const getStatusTheme = (status: string) => {
         switch (status) {
@@ -82,10 +107,10 @@ const AgentDashboard: React.FC = () => {
                     className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
                 >
                     {[
-                        { label: 'Total Requirements', value: requirements.length, icon: <FaSuitcase />, color: 'text-blue-400' },
-                        { label: 'New Requests', value: requirements.filter(r => r.status === 'NEW').length, icon: <FaClock />, color: 'text-yellow-400' },
-                        { label: 'In Progress', value: requirements.filter(r => r.status === 'IN_PROGRESS').length, icon: <FaStar />, color: 'text-purple-400' },
-                        { label: 'Completed', value: requirements.filter(r => r.status === 'COMPLETED').length, icon: <FaMoneyBillWave />, color: 'text-emerald-400' },
+                        { label: 'Total Requirements', value: stats.total, icon: <FaSuitcase />, color: 'text-blue-400' },
+                        { label: 'New Requests', value: stats.new, icon: <FaClock />, color: 'text-yellow-400' },
+                        { label: 'In Progress', value: stats.inProgress, icon: <FaStar />, color: 'text-purple-400' },
+                        { label: 'Completed', value: stats.completed, icon: <FaMoneyBillWave />, color: 'text-emerald-400' },
                     ].map((stat, i) => (
                         <motion.div
                             key={i}

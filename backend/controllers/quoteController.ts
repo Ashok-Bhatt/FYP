@@ -271,7 +271,8 @@ export const getUserQuotes = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const getQuotes = async (req: Request, res: Response) => {
     try {
-        const quotes = await Quote.find({})
+        const query = req.user?.role === 'ADMIN' ? {} : { agentId: req.user!._id };
+        const quotes = await Quote.find(query)
             .populate('requirementId', 'destination tripType budget startDate duration')
             .sort({ createdAt: -1 });
         res.json(quotes);
