@@ -16,8 +16,6 @@ const QuotesList: React.FC = () => {
     const [shareDropdown, setShareDropdown] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
-    const [compareLink, setCompareLink] = useState<string | null>(null);
-    const [generatingLink, setGeneratingLink] = useState(false);
 
     // Helper functions for view data
     const getViewStatusColor = (lastViewedAt: string | null) => {
@@ -369,27 +367,6 @@ const QuotesList: React.FC = () => {
         }
     };
 
-    const generateCompareLink = async () => {
-        if (!quotes.length) return;
-        
-        setGeneratingLink(true);
-        
-        try {
-            const requirementId = quotes[0].requirementId;
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/quotes/generate-compare-token/${requirementId}`,
-                {},
-                { headers: { Authorization: `Bearer ${user?.token}` } }
-            );
-            
-            setCompareLink(response.data.compareUrl);
-        } catch (error) {
-            console.error('Error generating compare link:', error);
-        } finally {
-            setGeneratingLink(false);
-        }
-    };
-
     if (loading) return <LoadingState />;
 
     return (
@@ -404,25 +381,6 @@ const QuotesList: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {quotes.length > 0 && (
-                            <button
-                                onClick={generateCompareLink}
-                                disabled={generatingLink}
-                                className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {generatingLink ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        Generate Compare Link
-                                    </>
-                                )}
-                            </button>
-                        )}
-                        
                         <QuoteFilters
                             searchTerm={searchTerm}
                             filterStatus={filterStatus}
@@ -432,32 +390,7 @@ const QuotesList: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Compare Link Display */}
-                {compareLink && (
-                    <div className="mb-8 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-emerald-400 font-medium mb-1">Comparison Link Generated!</p>
-                                <p className="text-gray-400 text-sm">Share this link with customers to compare quotes</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    value={compareLink}
-                                    readOnly
-                                    className="px-3 py-2 bg-black/50 border border-emerald-500/30 rounded-lg text-sm text-gray-300 w-64"
-                                />
-                                <button
-                                    onClick={() => navigator.clipboard.writeText(compareLink)}
-                                    className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
-                                >
-                                    Copy
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
+                <div className="mt-8">
                 {filteredQuotes.length === 0 ? (
                     <EmptyState onNavigateToDashboard={() => navigate('/agent/dashboard')} />
                 ) : (
@@ -478,8 +411,9 @@ const QuotesList: React.FC = () => {
                         ))}
                     </div>
                 )}
+                </div>
+            </div>
         </div>
-    </div>
     );
 };
 

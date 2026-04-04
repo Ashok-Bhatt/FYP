@@ -33,7 +33,6 @@ import TravelerQuotes from '../pages/traveler/TravelerQuotes';
 
 // Public Pages
 import PublicQuoteView from '../pages/PublicQuoteView';
-import CompareView from '../pages/public/CompareView';
 import QuoteAccepted from '../pages/public/QuoteAccepted';
 
 // Components
@@ -52,7 +51,6 @@ const AnimatedRoutes: React.FC = () => {
 
                 {/* Public View */}
                 <Route path="/quote/view/:token" element={<PublicQuoteView />} />
-                <Route path="/quote/compare/:token" element={<CompareView />} />
                 <Route path="/quote/accepted/:quoteId" element={<QuoteAccepted />} />
 
                 {/* Agent Routes */}
