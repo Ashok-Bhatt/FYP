@@ -6,6 +6,10 @@ export interface IQuoteView extends Document {
     userAgent: string;
     ipHash: string;
     duration?: number; // Optional duration in seconds
+    sectionEngagement?: Array<{
+        section: string;
+        duration: number;
+    }>;
 }
 
 const quoteViewSchema = new Schema<IQuoteView>({
@@ -32,7 +36,11 @@ const quoteViewSchema = new Schema<IQuoteView>({
     duration: {
         type: Number,
         default: null, // in seconds, optional
-    }
+    },
+    sectionEngagement: [{
+        section: { type: String, required: true },
+        duration: { type: Number, required: true, default: 0 }
+    }]
 }, {
     timestamps: false, // We only need timestamp field
 });

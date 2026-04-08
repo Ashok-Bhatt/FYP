@@ -298,7 +298,9 @@ export const getQuotesByRequirement = async (req: Request, res: Response) => {
 // @access  Private (Agent)
 export const getQuoteById = async (req: Request, res: Response) => {
     try {
-        const quote = await Quote.findById(req.params.id).populate('partnerId', 'name companyName');
+        const quote = await Quote.findById(req.params.id)
+            .populate('partnerId', 'name companyName')
+            .populate('requirementId', 'destination tripType duration pax contactInfo');
         if (quote) {
             res.json(quote);
         } else {
@@ -437,18 +439,65 @@ export const getPublicQuote = async (req: Request, res: Response) => {
                     userAgent,
                     ipHash,
                 });
-                await viewRecord.save();
+                const savedView = await viewRecord.save();
                 
                 // Trigger SSE broadcast
-                broadcastQuoteView(quote._id.toString(), currentTimestamp);
+                const event = JSON.stringify({
+                    type: 'quote_viewed',
+                    quoteId: quote._id,
+                    viewId: savedView._id,
+                    timestamp: currentTimestamp,
+                    destination: (quote.requirementId as any).destination
+                });
+
+                activeConnections.forEach(connection => {
+                    try {
+                        connection.write(`data: ${event}\n\n`);
+                    } catch (error) {
+                        activeConnections.delete(connection);
+                    }
+                });
             } catch (error) {
                 console.error('Failed to save quote view:', error);
             }
         });
 
-        res.json(quote);
+        // Add latestViewId to response for duration tracking
+        const latestView = await QuoteView.findOne({ quoteId: quote._id }).sort({ timestamp: -1 });
+        const quoteObj = quote.toObject();
+        (quoteObj as any).latestViewId = latestView?._id;
+
+        res.json(quoteObj);
     } catch (error: unknown) {
         handleError(res, error, 'Error fetching public quote');
+    }
+};
+
+// @desc    Update Quote View Duration
+// @route   POST /api/quotes/public/:token/view-duration
+// @access  Public
+export const updateQuoteViewDuration = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.params;
+        const { duration, viewId } = req.body;
+
+        const quote = await Quote.findOne({ shareToken: token });
+        if (!quote) {
+            res.status(404).json({ message: 'Quote not found' });
+            return;
+        }
+
+        if (viewId) {
+            const update: any = { $set: { duration } };
+            if (req.body.sectionEngagement) {
+                update.$set.sectionEngagement = req.body.sectionEngagement;
+            }
+            await QuoteView.findByIdAndUpdate(viewId, update);
+        }
+
+        res.json({ message: 'Duration updated' });
+    } catch (error: unknown) {
+        handleError(res, error, 'Error updating view duration');
     }
 };
 

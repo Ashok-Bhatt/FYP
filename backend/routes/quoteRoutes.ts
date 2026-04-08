@@ -12,6 +12,7 @@ import {
     getUserQuotes,
     generateItinerary,
     streamQuoteViews,
+    updateQuoteViewDuration,
 } from '../controllers/quoteController';
 import { protect, authorize } from '../middleware/authMiddleware';
 
@@ -20,6 +21,7 @@ const router = express.Router();
 // Public routes must be defined BEFORE /:id routes
 router.get('/public/:token', getPublicQuote);
 router.post('/public/:token/status', updatePublicQuoteStatus);
+router.post('/public/:token/view-duration', updateQuoteViewDuration);
 
 // User routes
 router.get('/user', protect, authorize('USER'), getUserQuotes);

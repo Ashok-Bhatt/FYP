@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -10,6 +10,8 @@ const PublicQuoteView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const sectionDurations = useRef<Record<string, number>>({});
+    const activeSection = useRef<string | null>(null);
 
     useEffect(() => {
         const fetchQuote = async () => {
@@ -36,6 +38,82 @@ const PublicQuoteView: React.FC = () => {
             setActionLoading(false);
         }
     };
+
+// Time tracking logic
+    useEffect(() => {
+        if (!quote || !quote.latestViewId) return;
+
+        let startTime = Date.now();
+        let totalDuration = 0;
+
+        const updateDuration = async () => {
+            const currentDuration = Math.round((Date.now() - startTime) / 1000);
+            totalDuration += currentDuration;
+            startTime = Date.now();
+
+            // Add current section's duration
+            if (activeSection.current) {
+                sectionDurations.current[activeSection.current] = (sectionDurations.current[activeSection.current] || 0) + currentDuration;
+            }
+
+            try {
+                const engagement = Object.entries(sectionDurations.current).map(([section, duration]) => ({
+                    section,
+                    duration
+                }));
+
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/quotes/public/${token}/view-duration`, {
+                    duration: totalDuration,
+                    viewId: quote.latestViewId,
+                    sectionEngagement: engagement
+                });
+            } catch (err) {
+                console.error('Failed to update duration', err);
+            }
+        };
+
+        const interval = setInterval(updateDuration, 10000);
+
+        // Intersection Observer for sections
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Update previous section before switching
+                    if (activeSection.current && activeSection.current !== entry.target.id) {
+                        const now = Date.now();
+                        const spent = Math.round((now - startTime) / 1000);
+                        sectionDurations.current[activeSection.current] = (sectionDurations.current[activeSection.current] || 0) + spent;
+                        startTime = now;
+                    }
+                    activeSection.current = entry.target.id;
+                }
+            });
+        }, { threshold: 0.5 });
+
+        // Observe sections
+        const sections = ['header', 'accommodation', 'transport', 'activities', 'summary'];
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) observer.observe(el);
+        });
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                updateDuration();
+            } else {
+                startTime = Date.now();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            updateDuration();
+            observer.disconnect();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [quote, token]);
 
     if (loading) {
         return (
@@ -65,6 +143,7 @@ const PublicQuoteView: React.FC = () => {
                 
                 {/* Header Section */}
                 <motion.div 
+                    id="header"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-zinc-900 border border-white/5 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden"
@@ -106,7 +185,13 @@ const PublicQuoteView: React.FC = () => {
                     <div className="md:col-span-2 space-y-6">
                         {/* Hotel Info */}
                         {quote.sections.hotels?.length > 0 && (
-                            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="bg-zinc-900 p-6 rounded-2xl border border-white/5">
+                            <motion.div 
+                                id="accommodation"
+                                initial={{ opacity: 0, x: -20 }} 
+                                animate={{ opacity: 1, x: 0 }} 
+                                transition={{ delay: 0.1 }} 
+                                className="bg-zinc-900 p-6 rounded-2xl border border-white/5"
+                            >
                                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
                                     <span className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg"><FaHotel /></span>
                                     Accommodation
@@ -129,7 +214,13 @@ const PublicQuoteView: React.FC = () => {
 
                         {/* Transport Info */}
                         {quote.sections.transport?.length > 0 && (
-                            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bg-zinc-900 p-6 rounded-2xl border border-white/5">
+                            <motion.div 
+                                id="transport"
+                                initial={{ opacity: 0, x: -20 }} 
+                                animate={{ opacity: 1, x: 0 }} 
+                                transition={{ delay: 0.2 }} 
+                                className="bg-zinc-900 p-6 rounded-2xl border border-white/5"
+                            >
                                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
                                     <span className="p-2 bg-blue-500/10 text-blue-400 rounded-lg"><FaPlane /></span>
                                     Transportation
@@ -151,7 +242,13 @@ const PublicQuoteView: React.FC = () => {
 
                         {/* Activities Info */}
                         {quote.sections.activities?.length > 0 && (
-                            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="bg-zinc-900 p-6 rounded-2xl border border-white/5">
+                            <motion.div 
+                                id="activities"
+                                initial={{ opacity: 0, x: -20 }} 
+                                animate={{ opacity: 1, x: 0 }} 
+                                transition={{ delay: 0.3 }} 
+                                className="bg-zinc-900 p-6 rounded-2xl border border-white/5"
+                            >
                                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
                                     <span className="p-2 bg-purple-500/10 text-purple-400 rounded-lg"><FaTicketAlt /></span>
                                     Activities & Sightseeing
@@ -170,7 +267,7 @@ const PublicQuoteView: React.FC = () => {
                     </div>
 
                     {/* Summary Sidebar */}
-                    <div className="md:col-span-1">
+                    <div className="md:col-span-1" id="summary">
                         <motion.div 
                             initial={{ opacity: 0, x: 20 }} 
                             animate={{ opacity: 1, x: 0 }} 
