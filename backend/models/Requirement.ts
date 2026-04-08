@@ -3,6 +3,8 @@ import { Requirement as SharedRequirement } from '../../shared/types';
 
 export interface IRequirement extends Omit<SharedRequirement, '_id'>, Document { 
     userId?: mongoose.Types.ObjectId;
+    compareToken?: string;
+    compareTokenGenerated?: Date;
 }
 
 const requirementSchema = new Schema<IRequirement>({
@@ -46,6 +48,14 @@ const requirementSchema = new Schema<IRequirement>({
         type: String,
         enum: ['NEW', 'IN_PROGRESS', 'QUOTES_READY', 'SENT_TO_USER', 'COMPLETED'],
         default: 'NEW',
+    },
+    compareToken: {
+        type: String,
+        unique: true,
+        sparse: true, // allows multiple null values
+    },
+    compareTokenGenerated: {
+        type: Date,
     },
 }, {
     timestamps: true,

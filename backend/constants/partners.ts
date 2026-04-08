@@ -65,7 +65,7 @@ export const indianPartners = [
         budgetRange: { min: 35000, max: 120000 },
         rating: 5,
         description: "Situated on the banks of Lake Pichola, The Oberoi Udaivilas is a magnificent palace hotel that epitomizes royal Rajasthani hospitality. With intricate architecture, private pools, and breathtaking lake views, it's a dream destination.",
-        images: ["https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800"],
+        images: ["https://images.unsplash.c om/photo-1582719508461-905c673771fd?w=800"],
         amenities: ["Private Pool Villas", "Spa", "Lake View Dining", "Boat Rides", "Cultural Performances", "Butler Service"],
         startingPrice: 42000,
         

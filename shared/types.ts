@@ -39,6 +39,8 @@ export interface Requirement {
         whatsapp?: string;
     };
     status: 'NEW' | 'IN_PROGRESS' | 'QUOTES_READY' | 'SENT_TO_USER' | 'COMPLETED';
+    compareToken?: string;
+    compareTokenGenerated?: string | Date;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }

@@ -582,17 +582,18 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
         }
 
         // Check if token is expired (7 days)
-        const tokenExpiry = new Date(requirement.compareTokenGenerated || requirement.createdAt);
+        const expiryBase = requirement.compareTokenGenerated || requirement.createdAt;
+        const tokenExpiry = new Date(expiryBase as Date);
         tokenExpiry.setDate(tokenExpiry.getDate() + 7);
         
         if (tokenExpiry < new Date()) {
             return res.status(410).json({ error: 'Comparison link expired' });
         }
 
-        // Get all quotes for this requirement with SENT or READY status
+        // Get all quotes for this requirement that have been sent to the traveler
         const quotes = await Quote.find({
             requirementId: requirement._id,
-            status: { $in: ['SENT', 'READY'] }
+            status: { $in: ['SENT_TO_USER'] }
         }).populate('partnerId');
 
         // Transform quotes for comparison (reuse existing logic)
@@ -630,10 +631,10 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
                     _id: quote._id.toString(),
                     partner: {
                         _id: partner?._id?.toString() || quote.partnerId.toString(),
-                        name: partner?.name || partnerProfile?.businessName || 'Travel Partner',
+                        name: partner?.name || partnerProfile?.companyName || 'Travel Partner',
                         rating: partnerProfile?.starRating || undefined,
                         totalReviews: partnerProfile?.reviews || 0,
-                        logo: partnerProfile?.logo || undefined,
+                        logo: (partnerProfile?.images && partnerProfile.images.length > 0) ? partnerProfile.images[0] : undefined,
                         specialties: partnerProfile?.specializations || []
                     },
                     status: quote.status as 'SENT' | 'READY',
@@ -652,11 +653,11 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
                     hotels,
                     itinerary: quote.itinerary || [],
                     activities,
-                    highlights: quote.highlights || [],
-                    inclusions: quote.inclusions || [],
-                    exclusions: quote.exclusions || [],
-                    createdAt: quote.createdAt?.toISOString() || new Date().toISOString(),
-                    validUntil: quote.validUntil?.toISOString()
+                    highlights: (quote as any).highlights || [],
+                    inclusions: (quote as any).inclusions || [],
+                    exclusions: (quote as any).exclusions || [],
+                    createdAt: (quote.createdAt as Date)?.toISOString() || new Date().toISOString(),
+                    validUntil: (quote as any).validUntil ? new Date((quote as any).validUntil).toISOString() : undefined
                 };
             })
         );
@@ -671,7 +672,7 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
                 duration: requirement.duration,
                 pax: requirement.pax,
                 contactInfo: requirement.contactInfo,
-                createdAt: requirement.createdAt?.toISOString()
+                createdAt: (requirement.createdAt as Date)?.toISOString()
             },
             quotes: transformedQuotes,
             insights,
@@ -712,10 +713,10 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
             return res.status(410).json({ error: 'Comparison link expired' });
         }
 
-        // Get all quotes for this requirement with SENT or READY status
+        // Get all quotes for this requirement that have been sent to the traveler
         const quotes = await Quote.find({
             requirementId,
-            status: { $in: ['SENT', 'READY'] }
+            status: { $in: ['SENT_TO_USER'] }
         }).populate('partnerId');
 
         // Transform quotes for comparison (reuse existing logic from getQuotesForComparisonByToken)
@@ -753,11 +754,11 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
                     _id: quote._id.toString(),
                     partner: {
                         _id: partner?._id?.toString() || quote.partnerId.toString(),
-                        name: partner?.name || (partnerProfile as any)?.businessName || 'Travel Partner',
-                        rating: (partnerProfile as any)?.starRating || undefined,
-                        totalReviews: (partnerProfile as any)?.reviews || 0,
-                        logo: (partnerProfile as any)?.logo || undefined,
-                        specialties: (partnerProfile as any)?.specializations || []
+                        name: partner?.name || partnerProfile?.companyName || 'Travel Partner',
+                        rating: partnerProfile?.starRating || undefined,
+                        totalReviews: partnerProfile?.reviews || 0,
+                        logo: (partnerProfile?.images && partnerProfile.images.length > 0) ? partnerProfile.images[0] : undefined,
+                        specialties: partnerProfile?.specializations || []
                     },
                     status: quote.status as 'SENT' | 'READY',
                     costs: {
@@ -778,8 +779,8 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
                     highlights: (quote as any).highlights || [],
                     inclusions: (quote as any).inclusions || [],
                     exclusions: (quote as any).exclusions || [],
-                    createdAt: quote.createdAt?.toISOString() || new Date().toISOString(),
-                    validUntil: (quote as any).validUntil?.toISOString()
+                    createdAt: (quote.createdAt as Date)?.toISOString() || new Date().toISOString(),
+                    validUntil: (quote as any).validUntil ? new Date((quote as any).validUntil).toISOString() : undefined
                 };
             })
         );
@@ -794,7 +795,7 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
                 duration: requirement.duration,
                 pax: requirement.pax,
                 contactInfo: requirement.contactInfo,
-                createdAt: requirement.createdAt?.toISOString()
+                createdAt: (requirement.createdAt as Date)?.toISOString()
             },
             quotes: transformedQuotes,
             insights,
@@ -807,42 +808,70 @@ export const getQuotesForComparison = async (req: Request, res: Response) => {
     }
 };
 
-// @desc    Accept a quote
+// @desc    Accept a quote via compare token (auto-declines sibling quotes)
 // @route   POST /api/quotes/:quoteId/accept
-// @access  Public (with token)
+// @access  Public (secured by compareToken)
 export const acceptQuote = async (req: Request, res: Response) => {
     try {
         const { quoteId } = req.params;
-        const { token, customerInfo } = req.body;
+        const { token } = req.body;
 
-        // Find the quote
-        const quote = await Quote.findById(quoteId).populate('requirementId');
+        if (!token) {
+            return res.status(400).json({ error: 'compareToken is required' });
+        }
+
+        // Find the quote (do NOT populate — we'll fetch requirement separately)
+        const quote = await Quote.findById(quoteId);
 
         if (!quote) {
             return res.status(404).json({ error: 'Quote not found' });
         }
 
-        // Validate compare token
-        const requirement = quote.requirementId as any;
+        // Validate the compare token against the associated requirement
+        const requirement = await Requirement.findById(quote.requirementId);
+        if (!requirement) {
+            return res.status(404).json({ error: 'Requirement not found' });
+        }
         if (!requirement.compareToken || requirement.compareToken !== token) {
-            return res.status(403).json({ error: 'Invalid token' });
+            return res.status(403).json({ error: 'Invalid or expired comparison token' });
         }
 
-        // Update quote status
+        // Check token expiry (7 days)
+        if (requirement.compareTokenGenerated) {
+            const expiry = new Date(requirement.compareTokenGenerated);
+            expiry.setDate(expiry.getDate() + 7);
+            if (expiry < new Date()) {
+                return res.status(410).json({ error: 'Comparison link has expired' });
+            }
+        }
+
+        // Prevent double-acceptance
+        if (quote.status === 'ACCEPTED') {
+            return res.status(409).json({ error: 'This quote has already been accepted' });
+        }
+
+        // 1. Accept the chosen quote
         quote.status = 'ACCEPTED';
         await quote.save();
 
-        // Update requirement status
+        // 2. Auto-decline all sibling quotes for the same requirement
+        await Quote.updateMany(
+            {
+                requirementId: requirement._id,
+                _id: { $ne: quote._id },
+                status: { $in: ['SENT_TO_USER', 'READY', 'DRAFT'] },
+            },
+            { $set: { status: 'DECLINED' } }
+        );
+
+        // 3. Mark the requirement as COMPLETED
         requirement.status = 'COMPLETED';
         await requirement.save();
 
-        // Send confirmation emails (implement email service)
-        // await sendAcceptanceEmail(customerInfo, quote);
-
         res.json({
             success: true,
-            message: 'Quote accepted successfully',
-            quoteId: quote._id.toString()
+            message: 'Quote accepted successfully. Other options have been declined.',
+            quoteId: quote._id.toString(),
         });
 
     } catch (error) {
@@ -870,9 +899,10 @@ export const generateCompareToken = async (req: Request, res: Response) => {
         requirement.compareTokenGenerated = new Date();
         await requirement.save();
 
+        const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
         res.json({
             compareToken: token,
-            compareUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/quote/compare/${token}`
+            compareUrl: `${frontendBaseUrl}/quote/compare/${token}`
         });
 
     } catch (error) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaFilter, FaSearch, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave } from 'react-icons/fa';
+import { FaFilter, FaSearch, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave, FaCopy, FaLink, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const RequirementDetails: React.FC = () => {
@@ -15,6 +15,9 @@ const RequirementDetails: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [viewingPartner, setViewingPartner] = useState<any>(null);
+    const [compareUrl, setCompareUrl] = useState<string | null>(null);
+    const [generatingCompareLink, setGeneratingCompareLink] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     // Filter State
     const [filters, setFilters] = useState({
@@ -113,6 +116,31 @@ const RequirementDetails: React.FC = () => {
         }
     };
 
+    const handleGenerateCompareLink = async () => {
+        setGeneratingCompareLink(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user?.token}` } };
+            const res = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/quotes/compare/generate-token/${id}`,
+                {},
+                config
+            );
+            setCompareUrl(res.data.compareUrl);
+        } catch (err) {
+            alert('Failed to generate comparison link. Make sure quotes have been sent to the traveler first.');
+        } finally {
+            setGeneratingCompareLink(false);
+        }
+    };
+
+    const handleCopyLink = () => {
+        if (compareUrl) {
+            navigator.clipboard.writeText(compareUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
     if (loading || !requirement) return (
         <div className="min-h-screen bg-black flex items-center justify-center">
             <FaSpinner className="animate-spin text-4xl text-emerald-400" />
@@ -140,6 +168,50 @@ const RequirementDetails: React.FC = () => {
                         </div>
                         <p className="text-gray-400 font-mono text-sm">ID: {requirement._id}</p>
                     </div>
+
+                    {/* Compare Link Button — visible once quotes are ready/sent */}
+                    {['QUOTES_READY', 'SENT_TO_USER', 'COMPLETED'].includes(requirement.status) && (
+                        <div className="flex flex-col items-end gap-3">
+                            <button
+                                onClick={handleGenerateCompareLink}
+                                disabled={generatingCompareLink}
+                                className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-60"
+                            >
+                                {generatingCompareLink
+                                    ? <FaSpinner className="animate-spin" />
+                                    : <FaLink />
+                                }
+                                {compareUrl ? 'Regenerate Compare Link' : 'Share Comparison Link'}
+                            </button>
+
+                            {/* Copy-to-clipboard panel */}
+                            <AnimatePresence>
+                                {compareUrl && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -8 }}
+                                        className="flex items-center gap-2 bg-zinc-900 border border-blue-500/30 rounded-xl px-4 py-3 shadow-xl max-w-sm w-full"
+                                    >
+                                        <FaLink className="text-blue-400 flex-shrink-0 text-sm" />
+                                        <input
+                                            readOnly
+                                            value={compareUrl}
+                                            className="flex-1 bg-transparent text-blue-300 text-xs font-mono truncate outline-none"
+                                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                                        />
+                                        <button
+                                            onClick={handleCopyLink}
+                                            className="flex-shrink-0 p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 transition-colors"
+                                            title="Copy link"
+                                        >
+                                            {copied ? <FaCheck className="text-emerald-400" /> : <FaCopy />}
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
 
                 {/* Info Cards Grid */}
