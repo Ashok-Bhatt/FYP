@@ -1,15 +1,48 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaPlaneDeparture, FaUser, FaEnvelope, FaLock, FaBuilding } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
+type SignupRole = 'USER' | 'PARTNER' | 'AGENT';
+
+const signupContent: Record<SignupRole, {
+    title: string;
+    subtitle: string;
+}> = {
+    USER: {
+        title: 'Create Traveler Account',
+        subtitle: 'Save your trip requests, track quote progress, and revisit offers anytime.',
+    },
+    PARTNER: {
+        title: 'Join as a Partner',
+        subtitle: 'List your strengths, receive matched demand, and send compelling quotes faster.',
+    },
+    AGENT: {
+        title: 'Create Agent Account',
+        subtitle: 'Set up your workspace and start managing inquiries, partners, and quotes.',
+    },
+};
+
 const Signup: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedRole = (searchParams.get('role')?.toUpperCase() || 'USER') as SignupRole;
+    const initialRole: SignupRole = ['USER', 'PARTNER', 'AGENT'].includes(requestedRole) ? requestedRole : 'USER';
+    const pendingTravelerSignup = (() => {
+        const storedValue = sessionStorage.getItem('pendingTravelerSignup');
+        if (!storedValue) return null;
+
+        try {
+            return JSON.parse(storedValue) as { name?: string; email?: string };
+        } catch {
+            return null;
+        }
+    })();
     const [formData, setFormData] = useState({
-        name: '',
-        email: '',
+        name: initialRole === 'USER' ? pendingTravelerSignup?.name || '' : '',
+        email: initialRole === 'USER' ? pendingTravelerSignup?.email || '' : '',
         password: '',
-        role: 'AGENT' as 'AGENT' | 'PARTNER' | 'USER',
+        role: initialRole as SignupRole,
         companyName: '',
         destinations: [] as string[],
     });
@@ -21,18 +54,32 @@ const Signup: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleRoleChange = (role: SignupRole) => {
+        setFormData((prev) => ({
+            ...prev,
+            role,
+            companyName: role === 'PARTNER' ? prev.companyName : '',
+        }));
+        setSearchParams(role === 'USER' ? {} : { role });
+    };
+
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
         try {
             const user = await register(formData);
+            if (user.role === 'USER') {
+                sessionStorage.removeItem('pendingTravelerSignup');
+            }
             if (user.role === 'AGENT') navigate('/agent');
             else if (user.role === 'PARTNER') navigate('/partner');
-            else navigate('/traveler/plan-journey');
+            else navigate('/traveler/dashboard');
         } catch (err) {
             setError(err as string);
         }
     };
+
+    const content = signupContent[formData.role];
 
     return (
         <div className="min-h-screen bg-black flex">
@@ -76,8 +123,24 @@ const Signup: React.FC = () => {
                     className="w-full max-w-md z-10"
                 >
                     <div className="mb-10">
-                        <h2 className="text-4xl font-bold text-white mb-2">Create Account</h2>
-                        <p className="text-gray-400">Join VoyageGen and start your journey.</p>
+                        <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 p-1">
+                            {(['USER', 'PARTNER', 'AGENT'] as SignupRole[]).map((role) => (
+                                <button
+                                    key={role}
+                                    type="button"
+                                    onClick={() => handleRoleChange(role)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                                        formData.role === role
+                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                            : 'text-white/60 hover:text-white'
+                                    }`}
+                                >
+                                    {role === 'USER' ? 'Traveler' : role === 'PARTNER' ? 'Partner' : 'Agent'}
+                                </button>
+                            ))}
+                        </div>
+                        <h2 className="text-4xl font-bold text-white mb-2">{content.title}</h2>
+                        <p className="text-gray-400">{content.subtitle}</p>
                     </div>
 
                     {error && (
@@ -140,20 +203,6 @@ const Signup: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">I am a</label>
-                            <select
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                className="w-full bg-zinc-900 border border-white/10 rounded-xl py-4 px-4 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all [&>option]:bg-zinc-900 [&>option]:text-white"
-                            >
-                                <option value="AGENT" className="bg-zinc-900 text-white">Travel Agent</option>
-                                <option value="PARTNER" className="bg-zinc-900 text-white">Travel Partner</option>
-                                <option value="USER" className="bg-zinc-900 text-white">Traveler</option>
-                            </select>
-                        </div>
-
                         {formData.role === 'PARTNER' && (
                             <>
                                 <div className="space-y-2">
@@ -182,7 +231,13 @@ const Signup: React.FC = () => {
                     </form>
 
                     <div className="mt-8 text-center text-gray-500">
-                        Already have an account? <Link to="/login" className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors">Sign In</Link>
+                        Already have an account?{' '}
+                        <Link
+                            to={formData.role === 'USER' ? '/login' : `/login?role=${formData.role}`}
+                            className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors"
+                        >
+                            Sign In
+                        </Link>
                     </div>
                 </motion.div>
             </div>

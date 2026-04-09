@@ -224,19 +224,25 @@ export const generateQuotes = generateQuote;
 // @access  Private (User)
 export const getUserQuotes = async (req: Request, res: Response) => {
     try {
-        if (!req.user?.id) {
+        if (!req.user?._id) {
             res.status(401).json({ message: 'User not authenticated' });
             return;
         }
 
         const { requirementId } = req.query;
+        const userRequirementFilter = {
+            $or: [
+                { userId: req.user._id },
+                { userId: { $exists: false }, 'contactInfo.email': req.user.email }
+            ]
+        };
         
         if (requirementId) {
             // If requirementId is provided, get quotes for that specific requirement
             // Verify the requirement belongs to the user
             const requirement = await Requirement.findOne({ 
-                _id: requirementId, 
-                userId: req.user.id 
+                _id: requirementId,
+                ...userRequirementFilter
             });
             
             if (!requirement) {
@@ -258,7 +264,7 @@ export const getUserQuotes = async (req: Request, res: Response) => {
         }
 
         // Default behavior: get all quotes for the user
-        const userRequirements = await Requirement.find({ userId: req.user.id }).select('_id');
+        const userRequirements = await Requirement.find(userRequirementFilter).select('_id');
         const requirementIds = userRequirements.map(req => req._id);
         
         const quotes = await Quote.find({ 

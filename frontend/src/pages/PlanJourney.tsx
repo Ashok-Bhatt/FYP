@@ -53,8 +53,22 @@ const dateInputRef = useRef<HTMLInputElement>(null);
             };
             
             await axios.post(`${import.meta.env.VITE_API_URL}/api/requirements`, formData, { headers });
+            if (!token) {
+                sessionStorage.setItem(
+                    'pendingTravelerSignup',
+                    JSON.stringify({
+                        name: formData.contactInfo.name,
+                        email: formData.contactInfo.email,
+                    })
+                );
+            }
             setLoading(false);
-            navigate('/thank-you');
+            navigate('/thank-you', {
+                state: {
+                    fromRequirementSubmit: true,
+                    shouldPromptSignup: !token,
+                }
+            });
         } catch (error) {
             console.error('Error submitting requirement:', error);
             setLoading(false);

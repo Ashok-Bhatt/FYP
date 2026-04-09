@@ -1,8 +1,35 @@
 import React, { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaPlaneDeparture, FaEnvelope, FaLock } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+
+type LoginRole = 'USER' | 'PARTNER' | 'AGENT';
+
+const roleContent: Record<LoginRole, {
+    title: string;
+    subtitle: string;
+    signupLabel: string;
+    signupRole?: LoginRole;
+}> = {
+    USER: {
+        title: 'Traveler Login',
+        subtitle: 'View your trip requests, quotes, and updates in one place.',
+        signupLabel: 'Create traveler account',
+        signupRole: 'USER',
+    },
+    PARTNER: {
+        title: 'Partner Portal',
+        subtitle: 'Manage your inventory, respond to demand, and grow bookings faster.',
+        signupLabel: 'Create partner account',
+        signupRole: 'PARTNER',
+    },
+    AGENT: {
+        title: 'Agent Login',
+        subtitle: 'Access requirements, match partners, and manage quotes end to end.',
+        signupLabel: 'Back to traveler login',
+    },
+};
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState<string>('');
@@ -10,6 +37,16 @@ const Login: React.FC = () => {
     const [error, setError] = useState<string>('');
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const requestedRole = (searchParams.get('role')?.toUpperCase() || 'USER') as LoginRole;
+    const activeRole: LoginRole = ['USER', 'PARTNER', 'AGENT'].includes(requestedRole) ? requestedRole : 'USER';
+    const content = roleContent[activeRole];
+
+    const handleRoleChange = (role: LoginRole) => {
+        setSearchParams(role === 'USER' ? {} : { role });
+        setError('');
+    };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -69,8 +106,24 @@ const Login: React.FC = () => {
                     className="w-full max-w-md z-10"
                 >
                     <div className="mb-10">
-                        <h2 className="text-4xl font-bold text-white mb-2">Welcome Back</h2>
-                        <p className="text-gray-400">Enter your details to access your account.</p>
+                        <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/5 p-1">
+                            {(['USER', 'PARTNER', 'AGENT'] as LoginRole[]).map((role) => (
+                                <button
+                                    key={role}
+                                    type="button"
+                                    onClick={() => handleRoleChange(role)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                                        activeRole === role
+                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                            : 'text-white/60 hover:text-white'
+                                    }`}
+                                >
+                                    {role === 'USER' ? 'Traveler' : role === 'PARTNER' ? 'Partner' : 'Agent'}
+                                </button>
+                            ))}
+                        </div>
+                        <h2 className="text-4xl font-bold text-white mb-2">{content.title}</h2>
+                        <p className="text-gray-400">{content.subtitle}</p>
                     </div>
 
                     {error && (
@@ -124,7 +177,24 @@ const Login: React.FC = () => {
                     </form>
 
                     <div className="mt-8 text-center text-gray-500">
-                        Don't have an account? <Link to="/signup" className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors">Create Account</Link>
+                        {content.signupRole ? (
+                            <>
+                                Need access?{' '}
+                                <Link
+                                    to={content.signupRole === 'USER' ? '/signup' : `/signup?role=${content.signupRole}`}
+                                    className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors"
+                                >
+                                    {content.signupLabel}
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                Looking for the traveler portal?{' '}
+                                <Link to="/login" className="text-emerald-400 font-medium hover:text-emerald-300 transition-colors">
+                                    {content.signupLabel}
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </motion.div>
             </div>

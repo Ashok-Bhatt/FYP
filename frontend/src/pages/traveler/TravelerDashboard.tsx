@@ -4,53 +4,81 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { FaSpinner } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { 
-    FaMapMarkerAlt, FaUsers, FaCalendarAlt, FaMoneyBillWave, 
-    FaSuitcase, FaClock, FaStar, FaArrowRight, FaPlane, FaEye
+import {
+    FaMapMarkerAlt,
+    FaUsers,
+    FaCalendarAlt,
+    FaMoneyBillWave,
+    FaSuitcase,
+    FaClock,
+    FaStar,
+    FaArrowRight,
+    FaPlane,
+    FaEye,
+    FaFileInvoiceDollar,
 } from 'react-icons/fa';
 
 const TravelerDashboard: React.FC = () => {
     const { user } = useAuth();
     const token = user?.token || '';
     const [requirements, setRequirements] = useState<any[]>([]);
+    const [quotes, setQuotes] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        fetchRequirements();
-    }, []);
+        const fetchDashboardData = async () => {
+            try {
+                const headers = { Authorization: `Bearer ${token}` };
+                const [requirementsResponse, quotesResponse] = await Promise.all([
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/requirements/user`, { headers }),
+                    axios.get(`${import.meta.env.VITE_API_URL}/api/quotes/user`, { headers }),
+                ]);
 
-    const fetchRequirements = async () => {
-        try {
-            const { data } = await axios.get(
-                `${import.meta.env.VITE_API_URL}/api/requirements/user`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setRequirements(data);
-        } catch (error) {
-            console.error('Error fetching requirements:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+                setRequirements(requirementsResponse.data);
+                setQuotes(quotesResponse.data);
+            } catch (error) {
+                console.error('Error fetching traveler dashboard data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [token]);
 
     const getStatusTheme = (status: string) => {
         switch (status) {
-            case 'NEW': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-            case 'IN_PROGRESS': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-            case 'QUOTES_READY': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-            case 'SENT_TO_USER': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-            case 'COMPLETED': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-            default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+            case 'NEW':
+                return 'bg-sky-500/20 text-sky-300 border-sky-500/30';
+            case 'IN_PROGRESS':
+                return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+            case 'QUOTES_READY':
+                return 'bg-violet-500/20 text-violet-300 border-violet-500/30';
+            case 'SENT_TO_USER':
+                return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+            case 'COMPLETED':
+                return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+            default:
+                return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
         }
     };
+
+    const getRequirementQuoteCount = (requirementId: string) =>
+        quotes.filter((quote) => quote.requirementId?._id === requirementId || quote.requirementId === requirementId).length;
+
+    const activeRequestsCount = requirements.filter((requirement) =>
+        ['NEW', 'IN_PROGRESS', 'QUOTES_READY', 'SENT_TO_USER'].includes(requirement.status)
+    ).length;
+    const readyQuotesCount = quotes.filter((quote) => quote.status === 'SENT_TO_USER').length;
+    const acceptedQuotesCount = quotes.filter((quote) => quote.status === 'ACCEPTED').length;
 
     if (loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="text-center">
-                    <FaSpinner className="animate-spin text-4xl text-blue-400 mx-auto mb-4" />
+                    <FaSpinner className="animate-spin text-4xl text-emerald-400 mx-auto mb-4" />
                     <div className="text-white text-xl font-medium">Loading your dashboard...</div>
-                    <div className="text-gray-400 text-sm mt-2">Fetching your travel journeys</div>
+                    <div className="text-gray-400 text-sm mt-2">Fetching your trips and live quote updates</div>
                 </div>
             </div>
         );
@@ -59,91 +87,130 @@ const TravelerDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-black text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-12"
                 >
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
-                        Traveler Dashboard
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-white to-white/55 bg-clip-text text-transparent mb-2">
+                        My Trips
                     </h1>
-                    <p className="text-gray-400 text-lg">Manage your travel plans and explore amazing destinations</p>
+                    <p className="text-gray-400 text-lg">
+                        Track every request, see how many quotes are ready, and jump straight into the offers that matter.
+                    </p>
                 </motion.div>
 
-                {/* Stats Overview */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12"
                 >
                     {[
-                        { label: 'Total Journeys', value: requirements.length, icon: <FaSuitcase />, color: 'text-blue-400' },
-                        { label: 'New Requests', value: requirements.filter(r => r.status === 'NEW').length, icon: <FaClock />, color: 'text-yellow-400' },
-                        { label: 'In Progress', value: requirements.filter(r => r.status === 'IN_PROGRESS').length, icon: <FaStar />, color: 'text-purple-400' },
-                        { label: 'Completed', value: requirements.filter(r => r.status === 'COMPLETED').length, icon: <FaMoneyBillWave />, color: 'text-emerald-400' },
-                    ].map((stat, i) => (
+                        { label: 'Trip Requests', value: requirements.length, icon: <FaSuitcase />, color: 'text-sky-300' },
+                        { label: 'Quotes Received', value: quotes.length, icon: <FaFileInvoiceDollar />, color: 'text-emerald-300' },
+                        { label: 'Awaiting Review', value: readyQuotesCount, icon: <FaEye />, color: 'text-amber-300' },
+                        { label: 'Accepted Trips', value: acceptedQuotesCount, icon: <FaStar />, color: 'text-fuchsia-300' },
+                    ].map((stat, index) => (
                         <motion.div
-                            key={i}
+                            key={stat.label}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 + i * 0.1 }}
-                            className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-6 hover:border-zinc-700/50 transition-all duration-300"
+                            transition={{ delay: 0.15 + index * 0.08 }}
+                            className="overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.14),_transparent_38%),linear-gradient(180deg,rgba(24,24,27,0.94),rgba(10,10,12,0.94))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
                         >
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="mb-4 flex items-center justify-between">
                                 <div className={`text-2xl ${stat.color}`}>{stat.icon}</div>
                                 <span className="text-3xl font-bold text-white">{stat.value}</span>
                             </div>
-                            <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
+                            <p className="text-sm font-medium text-white/60">{stat.label}</p>
                         </motion.div>
                     ))}
                 </motion.div>
 
-                {/* Quick Actions */}
-                {/* <motion.div
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="mb-12"
+                    className="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-[1.45fr_0.95fr]"
                 >
-                    <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Link
-                            to="/traveler/plan-journey"
-                            className="group bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">Plan New Journey</h3>
-                                    <p className="text-blue-100">Start planning your next adventure</p>
+                    <div className="rounded-[32px] border border-emerald-400/15 bg-[linear-gradient(135deg,rgba(16,185,129,0.2),rgba(16,24,40,0.94)_60%)] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.34)]">
+                        <div className="mb-8 flex items-start justify-between gap-6">
+                            <div>
+                                <div className="mb-3 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-300">
+                                    Returning Traveler
                                 </div>
-                                <FaPlane className="text-4xl text-white/80 group-hover:scale-110 transition-transform" />
+                                <h2 className="text-3xl font-semibold text-white">
+                                    You have {quotes.length} quote{quotes.length === 1 ? '' : 's'} across {requirements.length} trip plan{requirements.length === 1 ? '' : 's'}.
+                                </h2>
+                                <p className="mt-3 max-w-2xl text-base text-white/65">
+                                    Open your latest quotes in one click or send a new trip brief if you want more options.
+                                </p>
                             </div>
-                        </Link>
-                        <Link
-                            to="/traveler/quotes"
-                            className="group bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-8 hover:border-blue-500/30 transition-all duration-300"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">View My Quotes</h3>
-                                    <p className="text-gray-400">Check your travel quotations</p>
-                                </div>
-                                <FaArrowRight className="text-4xl text-blue-400 group-hover:translate-x-2 transition-transform" />
+                            <div className="hidden rounded-3xl border border-white/10 bg-white/5 px-5 py-4 lg:block">
+                                <div className="text-xs uppercase tracking-[0.22em] text-white/35">Open Requests</div>
+                                <div className="mt-2 text-4xl font-bold text-white">{activeRequestsCount}</div>
                             </div>
-                        </Link>
-                    </div>
-                </motion.div> */}
+                        </div>
 
-                {/* Recent Journeys */}
+                        <div className="flex flex-wrap gap-4">
+                            <Link
+                                to="/traveler/quotes"
+                                className="inline-flex items-center gap-3 rounded-full bg-white px-6 py-3 font-semibold text-black transition-transform hover:scale-[1.02]"
+                            >
+                                <FaEye />
+                                See My Quotes
+                            </Link>
+                            <Link
+                                to="/traveler/plan-journey"
+                                className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-6 py-3 font-semibold text-white transition-colors hover:border-emerald-300/40 hover:bg-white/10"
+                            >
+                                <FaPlane />
+                                Plan Another Trip
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[32px] border border-white/10 bg-zinc-900/85 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-white/40">Snapshot</h3>
+                        <div className="mt-6 space-y-5">
+                            <div className="flex items-center justify-between border-b border-white/8 pb-4">
+                                <span className="text-white/65">Requests in motion</span>
+                                <span className="text-2xl font-semibold text-white">{activeRequestsCount}</span>
+                            </div>
+                            <div className="flex items-center justify-between border-b border-white/8 pb-4">
+                                <span className="text-white/65">Quotes ready to review</span>
+                                <span className="text-2xl font-semibold text-white">{readyQuotesCount}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-white/65">Trips booked</span>
+                                <span className="text-2xl font-semibold text-white">{acceptedQuotesCount}</span>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <h2 className="text-2xl font-bold text-white mb-6">Recent Journeys</h2>
-                    
+                    <div className="mb-6 flex items-end justify-between gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">My Trip Requests</h2>
+                            <p className="mt-1 text-sm text-gray-400">
+                                Every card shows the current trip status and how many quotes have already been generated.
+                            </p>
+                        </div>
+                        <Link
+                            to="/traveler/quotes"
+                            className="hidden md:inline-flex items-center gap-2 text-sm font-medium text-emerald-300 transition-colors hover:text-emerald-200"
+                        >
+                            Open all quotes
+                            <FaArrowRight />
+                        </Link>
+                    </div>
+
                     {requirements.length === 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -151,11 +218,11 @@ const TravelerDashboard: React.FC = () => {
                             className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-12 text-center"
                         >
                             <FaSuitcase className="text-6xl text-gray-600 mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold text-gray-300 mb-2">No journeys yet</h3>
-                            <p className="text-gray-500 mb-6">Start planning your first adventure to see it here</p>
+                            <h3 className="text-xl font-semibold text-gray-300 mb-2">No trips yet</h3>
+                            <p className="text-gray-500 mb-6">Start planning your first journey and your quotes will show up here.</p>
                             <Link
                                 to="/traveler/plan-journey"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-400 transition-colors"
                             >
                                 <FaPlane />
                                 Plan Your First Journey
@@ -163,75 +230,87 @@ const TravelerDashboard: React.FC = () => {
                         </motion.div>
                     ) : (
                         <div className="grid gap-6">
-                            {requirements.map((req, index) => (
-                                <motion.div
-                                    key={req._id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 + index * 0.1 }}
-                                >
-                                    <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/50 rounded-2xl p-8 hover:border-blue-500/30 transition-all duration-300">
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                                                        <FaMapMarkerAlt className="text-blue-400 text-lg" />
+                            {requirements.map((requirement, index) => {
+                                const quoteCount = getRequirementQuoteCount(requirement._id);
+
+                                return (
+                                    <motion.div
+                                        key={requirement._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.35 + index * 0.08 }}
+                                    >
+                                        <div className="rounded-[28px] border border-zinc-800/60 bg-zinc-900/70 p-8 backdrop-blur-xl transition-all duration-300 hover:border-emerald-400/25">
+                                            <div className="mb-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                                                <div className="flex-1">
+                                                    <div className="mb-4 flex items-center gap-4">
+                                                        <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/10 p-3">
+                                                            <FaMapMarkerAlt className="text-emerald-300 text-lg" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-2xl font-bold text-white">{requirement.destination}</h3>
+                                                            <p className="text-gray-400">{requirement.tripType}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h3 className="text-2xl font-bold text-white">
-                                                            {req.destination}
-                                                        </h3>
-                                                        <p className="text-gray-400">{req.tripType}</p>
+
+                                                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                                                        <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                                            <FaUsers className="text-emerald-300 text-sm" />
+                                                            <span className="text-sm text-gray-300">
+                                                                {requirement.pax.adults} Adults{requirement.pax.children > 0 ? `, ${requirement.pax.children} Children` : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                                            <FaCalendarAlt className="text-emerald-300 text-sm" />
+                                                            <span className="text-sm text-gray-300">{requirement.duration || 0} Days</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                                            <FaMoneyBillWave className="text-emerald-300 text-sm" />
+                                                            <span className="text-sm text-gray-300">Rs {requirement.budget?.toLocaleString() || 'Not specified'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
+                                                            <FaStar className="text-emerald-300 text-sm" />
+                                                            <span className="text-sm text-gray-300">{requirement.hotelStar || 0} Star Hotel</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <div className="flex items-center gap-2 bg-zinc-800/30 px-3 py-2 rounded-lg">
-                                                        <FaUsers className="text-blue-400 text-sm" />
-                                                        <span className="text-sm text-gray-300">
-                                                            {req.pax.adults} Adults{req.pax.children > 0 && `, ${req.pax.children} Children`}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-zinc-800/30 px-3 py-2 rounded-lg">
-                                                        <FaCalendarAlt className="text-blue-400 text-sm" />
-                                                        <span className="text-sm text-gray-300">{req.duration || 0} Days</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-zinc-800/30 px-3 py-2 rounded-lg">
-                                                        <FaMoneyBillWave className="text-blue-400 text-sm" />
-                                                        <span className="text-sm text-gray-300">₹{req.budget?.toLocaleString() || 'Not specified'}</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 bg-zinc-800/30 px-3 py-2 rounded-lg">
-                                                        <FaStar className="text-blue-400 text-sm" />
-                                                        <span className="text-sm text-gray-300">{req.hotelStar || 0}⭐ Hotel</span>
+
+                                                <div className="flex flex-col items-start gap-3 lg:items-end">
+                                                    <span className={`rounded-full border px-4 py-2 text-sm font-bold ${getStatusTheme(requirement.status)}`}>
+                                                        {requirement.status.replace(/_/g, ' ')}
+                                                    </span>
+                                                    <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-300">
+                                                        {quoteCount} Quote{quoteCount === 1 ? '' : 's'}
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div className="flex flex-col items-end gap-3 ml-6">
-                                                <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getStatusTheme(req.status)}`}>
-                                                    {req.status.replace(/_/g, ' ')}
-                                                </span>
+
+                                            {requirement.description && (
+                                                <div className="border-t border-white/8 pt-4">
+                                                    <p className="text-sm text-gray-400 line-clamp-2">{requirement.description}</p>
+                                                </div>
+                                            )}
+
+                                            <div className="mt-4 border-t border-white/8 pt-4">
+                                                {quoteCount > 0 ? (
+                                                    <Link
+                                                        to={`/traveler/quotes/${requirement._id}`}
+                                                        className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 font-medium text-emerald-300 transition-colors hover:bg-emerald-400/15"
+                                                    >
+                                                        <FaEye size={14} />
+                                                        View {quoteCount} Quote{quoteCount === 1 ? '' : 's'}
+                                                    </Link>
+                                                ) : (
+                                                    <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/55">
+                                                        <FaClock size={14} />
+                                                        Quotes are still being prepared
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        
-                                        {req.description && (
-                                            <div className="border-t border-zinc-800/50 pt-4">
-                                                <p className="text-gray-400 text-sm line-clamp-2">{req.description}</p>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="border-t border-zinc-800/50 pt-4 mt-4">
-                                            <Link
-                                                to={`/traveler/quotes/${req._id}`}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 font-medium rounded-lg hover:bg-blue-500/20 transition-colors border border-blue-500/20"
-                                            >
-                                                <FaEye size={14} />
-                                                See Quotes
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     )}
                 </motion.div>

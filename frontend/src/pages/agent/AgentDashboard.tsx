@@ -14,14 +14,18 @@ const AgentDashboard: React.FC = () => {
     const [requirements, setRequirements] = useState<any[]>([]);
     const [quotes, setQuotes] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const token = user?.token || '';
-
-    console.log(quotes);
 
     useEffect(() => {
         fetchData();
     }, [token]);
+
+    const handleAuthFailure = () => {
+        logout();
+        navigate('/login?role=AGENT', { replace: true });
+    };
 
     const fetchData = async () => {
         try {
@@ -41,6 +45,10 @@ const AgentDashboard: React.FC = () => {
             setRequirements(reqRes.data);
             setQuotes(quoteRes.data);
         } catch (error) {
+            if (axios.isAxiosError(error) && [401, 403].includes(error.response?.status || 0)) {
+                handleAuthFailure();
+                return;
+            }
             console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
@@ -73,6 +81,16 @@ const AgentDashboard: React.FC = () => {
         };
 
         eventSource.onerror = (err) => {
+            fetch(`${import.meta.env.VITE_API_URL}/api/quotes/stream/views?token=${token}`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then((response) => {
+                    if ([401, 403].includes(response.status)) {
+                        handleAuthFailure();
+                    }
+                })
+                .catch(() => {});
             console.error('SSE Error:', err);
             eventSource.close();
         };

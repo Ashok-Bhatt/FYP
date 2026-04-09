@@ -42,10 +42,10 @@ const Header: React.FC = () => {
 
                 <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
                     {/* Logo */}
-                    <div className="flex items-center gap-2 text-2xl font-bold tracking-tighter cursor-pointer text-white drop-shadow-md z-50">
+                    <Link to="/" className="flex items-center gap-2 text-2xl font-bold tracking-tighter cursor-pointer text-white drop-shadow-md z-50">
                         <FaPlaneDeparture className="text-emerald-400" />
                         <span>Voyage<span className="text-white/70 font-light">Gen</span></span>
-                    </div>
+                    </Link>
 
                     {/* Desktop Nav Links */}
                     <nav className="hidden lg:flex gap-10 text-sm font-medium text-white/80">
@@ -69,11 +69,8 @@ const Header: React.FC = () => {
 
                     {/* CTAs */}
                     <div className="hidden lg:flex items-center gap-4 z-50">
-                        <Link to="/login" className="text-sm font-medium text-white/80 hover:text-white transition-colors">
-                            Partner Login
-                        </Link>
-                        <Link to="/signup" className="px-6 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-sm font-bold hover:bg-emerald-500/20 transition-all">
-                            Partner Sign Up
+                        <Link to="/login" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                            Login
                         </Link>
                         <Link to="/plan-journey" className="px-6 py-2.5 bg-white text-black rounded-full text-sm font-bold hover:scale-105 transition-transform drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                             Plan Your Trip
@@ -103,11 +100,8 @@ const Header: React.FC = () => {
                     <Link to="/plan-journey" onClick={() => setMobileMenuOpen(false)} className="w-full py-3 bg-white text-black text-center rounded-full font-bold">
                         Plan Your Trip
                     </Link>
-                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="w-full py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-center rounded-full font-bold">
-                        Partner Sign Up
-                    </Link>
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-3 text-white/60 text-center rounded-full font-medium hover:text-white">
-                        Partner Login
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="w-full py-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-center rounded-full font-bold">
+                        Login
                     </Link>
                 </div>
             </div>

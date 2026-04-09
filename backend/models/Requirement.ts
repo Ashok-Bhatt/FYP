@@ -11,7 +11,7 @@ const requirementSchema = new Schema<IRequirement>({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
+        required: false,
     },
     destination: {
         type: String,

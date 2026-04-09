@@ -78,7 +78,12 @@ export const getUserRequirements = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        const requirements = await Requirement.find({ userId: req.user._id }).sort({ createdAt: -1 });
+        const requirements = await Requirement.find({
+            $or: [
+                { userId: req.user._id },
+                { userId: { $exists: false }, 'contactInfo.email': req.user.email }
+            ]
+        }).sort({ createdAt: -1 });
         res.json(requirements);
     } catch (error: unknown) {
         handleError(res, error, 'Error fetching user requirements');

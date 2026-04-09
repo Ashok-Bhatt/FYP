@@ -7,11 +7,11 @@ import {
     deleteRequirement,
     getUserRequirements,
 } from '../controllers/requirementController';
-import { protect, authorize } from '../middleware/authMiddleware';
+import { protect, authorize, optionalProtect } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-router.post('/', createRequirement);
+router.post('/', optionalProtect, createRequirement);
 router.get('/', protect, authorize('AGENT', 'ADMIN'), getRequirements);
 router.get('/user', protect, authorize('USER'), getUserRequirements);
 router.get('/:id', protect, authorize('USER', 'AGENT', 'ADMIN'), getRequirementById);

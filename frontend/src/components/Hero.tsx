@@ -116,9 +116,12 @@ const Hero: React.FC = () => {
         window.addEventListener('mousemove', onDocumentMouseMove);
 
         const clock = new THREE.Clock();
+        let animationFrameId = 0;
+        let isDisposed = false;
 
         const animate = () => {
-            requestAnimationFrame(animate);
+            if (isDisposed) return;
+            animationFrameId = requestAnimationFrame(animate);
             const elapsedTime = clock.getElapsedTime();
             
             // Smoothly interpolate camera position toward mouse
@@ -148,8 +151,11 @@ const Hero: React.FC = () => {
         window.addEventListener('resize', handleResize);
 
         return () => {
+            isDisposed = true;
+            cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', onDocumentMouseMove);
+            scene.remove(particlesMesh);
             // Cleanup Three.js
             particlesGeometry.dispose();
             particlesMaterial.dispose();
@@ -215,10 +221,11 @@ const Hero: React.FC = () => {
                 </div>
 
                 {/* CTAs */}
-                <div ref={ctaRef} className="mt-12 flex flex-col sm:flex-row gap-6 items-center">
+                <div ref={ctaRef} className="mt-12 flex flex-col items-center gap-6">
+                    <div className="flex flex-col sm:flex-row gap-6 items-center">
                     <Link to="/plan-journey">
                         <button className="group relative px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] overflow-hidden">
-                            <span className="relative z-10">Start Your Journey</span>
+                            <span className="relative z-10">Get My Free Quote</span>
                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-100 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                     </Link>
@@ -229,6 +236,13 @@ const Hero: React.FC = () => {
                         </div>
                         Watch How It Works
                     </a>
+                    </div>
+                    <Link
+                        to="/login"
+                        className="text-sm font-medium text-white/55 transition-colors hover:text-white"
+                    >
+                        Already have an account? Login
+                    </Link>
                 </div>
             </div>
 
