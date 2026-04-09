@@ -16,6 +16,7 @@ import {
     getQuotesForComparison,
     generateCompareToken,
     acceptQuote,
+    updateQuoteViewDuration,
 } from '../controllers/quoteController';
 import { protect, authorize } from '../middleware/authMiddleware';
 
@@ -24,6 +25,7 @@ const router = express.Router();
 // Public routes must be defined BEFORE /:id routes
 router.get('/public/:token', getPublicQuote);
 router.post('/public/:token/status', updatePublicQuoteStatus);
+router.post('/public/:token/view-duration', updateQuoteViewDuration);
 
 // Multi-quote comparison routes (public, secured by compareToken)
 // IMPORTANT: these must stay before /:id to avoid 'compare' being treated as a quote ID

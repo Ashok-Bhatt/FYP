@@ -6,6 +6,7 @@ import QuoteFilters from '../../components/agent/QuoteFilters';
 import QuoteCard from '../../components/agent/QuoteCard';
 import EmptyState from '../../components/agent/EmptyState';
 import LoadingState from '../../components/agent/LoadingState';
+import { toast } from 'react-hot-toast';
 
 const QuotesList: React.FC = () => {
     const { user } = useAuth();
@@ -103,7 +104,7 @@ const QuotesList: React.FC = () => {
         if (!user?.token) return;
 
         const eventSource = new EventSource(
-            `${import.meta.env.VITE_API_URL}/api/quotes/stream/views`
+            `${import.meta.env.VITE_API_URL}/api/quotes/stream/views?token=${user.token}`
         );
 
         eventSource.onopen = () => {
@@ -401,7 +402,7 @@ const QuotesList: React.FC = () => {
                                 quote={quote}
                                 shareDropdown={shareDropdown}
                                 setShareDropdown={setShareDropdown}
-                                onView={(id) => navigate(`/agent/quote/${id}`)}
+                                onView={(id: string) => navigate(`/agent/quote/${id}`)}
                                 onDownload={downloadPDF}
                                 onDelete={deleteQuote}
                                 onShare={handleShare}

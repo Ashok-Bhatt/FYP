@@ -17,6 +17,8 @@ const AgentDashboard: React.FC = () => {
     const { user } = useAuth();
     const token = user?.token || '';
 
+    console.log(quotes);
+
     useEffect(() => {
         fetchData();
     }, [token]);
@@ -44,6 +46,41 @@ const AgentDashboard: React.FC = () => {
             setLoading(false);
         }
     };
+
+    // SSE Notifications logic
+    useEffect(() => {
+        if (!token) return;
+
+        const eventSource = new EventSource(`${import.meta.env.VITE_API_URL}/api/quotes/stream/views?token=${token}`);
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'quote_viewed') {
+                import('react-hot-toast').then(({ toast }) => {
+                    toast.success(`Quote for ${data.destination} was viewed by the traveler!`, {
+                        duration: 5000,
+                        position: 'top-right',
+                        style: {
+                            background: '#18181b',
+                            color: '#fff',
+                            border: '1px solid #27272a',
+                        },
+                    });
+                });
+                // Optionally refresh stats or quote list
+                fetchData();
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('SSE Error:', err);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [token]);
 
     if (loading) {
         return (
@@ -127,6 +164,65 @@ const AgentDashboard: React.FC = () => {
                         </motion.div>
                     ))}
                 </motion.div>
+
+                {/* Quote Intelligence Section */}
+                {quotes.some(q => (q.viewCount > 0) && (q.status === 'SENT_TO_USER')) && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mb-12 bg-gradient-to-br from-emerald-500/10 via-zinc-900/60 to-zinc-900/60 border border-emerald-500/20 rounded-3xl p-8 backdrop-blur-xl"
+                    >
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="p-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
+                                <FaStar className="text-emerald-400 text-xl" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Quote Intelligence</h2>
+                                <p className="text-gray-400 text-sm">Real-time engagement insights and AI recommendations</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {quotes
+                                .filter(q => q.viewCount > 0 && q.status === 'SENT_TO_USER')
+                                .sort((a, b) => b.viewCount - a.viewCount)
+                                .slice(0, 3)
+                                .map((quote) => (
+                                    <div key={quote._id} className="bg-black/40 border border-white/5 rounded-2xl p-6 hover:border-emerald-500/30 transition-all group">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h4 className="font-bold text-white group-hover:text-emerald-400 transition-colors uppercase text-xs tracking-wider">High Engagement</h4>
+                                                <p className="text-lg font-bold text-white">{quote.requirementId?.destination}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-2xl font-black text-emerald-400">{quote.viewCount}</div>
+                                                <div className="text-[10px] text-gray-500 uppercase font-bold">Total Views</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="space-y-3 mb-6">
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-gray-500">Last View</span>
+                                                <span className="text-gray-300">{new Date(quote.lastViewedAt).toLocaleTimeString()}</span>
+                                            </div>
+                                            {quote.viewCount >= 3 && (
+                                                <div className="bg-emerald-500/10 text-emerald-400 p-3 rounded-lg text-xs font-medium border border-emerald-500/20 animate-pulse">
+                                                    🎯 AI Recommendation: Traveler is highly interested. Call now to close!
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Link 
+                                            to={`/agent/requirement/${quote.requirementId?._id || quote.requirementId}`}
+                                            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-emerald-500 text-white hover:text-black py-3 rounded-xl transition-all text-sm font-bold"
+                                        >
+                                            View Requirement <FaArrowRight className="text-xs" />
+                                        </Link>
+                                    </div>
+                                ))}
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Requirements List */}
                 <motion.div

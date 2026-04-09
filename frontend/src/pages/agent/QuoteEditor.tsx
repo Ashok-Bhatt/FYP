@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import {
     FaSave, FaArrowLeft, FaCalculator, FaPlane, FaHotel, FaTicketAlt,
-    FaUser, FaMapMarkerAlt, FaCalendarAlt, FaSpinner, FaEnvelope, FaMap, FaFilePdf
+    FaUser, FaMapMarkerAlt, FaCalendarAlt, FaSpinner, FaEnvelope, FaMap, FaFilePdf, FaWhatsapp
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import ItineraryTimeline from '../../components/ItineraryTimeline';
@@ -28,6 +28,7 @@ const QuoteEditor: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [sending, setSending] = useState(false);
+    const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
     const [itinerary, setItinerary] = useState<ItineraryDay[]>([]);
     const [generatingItinerary, setGeneratingItinerary] = useState(false);
     const [itineraryError, setItineraryError] = useState<string | null>(null);
@@ -130,6 +131,59 @@ const QuoteEditor: React.FC = () => {
             alert('Failed to send quote.');
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleSendWhatsApp = async () => {
+        setSendingWhatsApp(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user?.token}` } };
+            // Mark as sent and get/generate the share token
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/quotes/${id}/send`, {}, config);
+            const shareToken = res.data?.quote?.shareToken;
+
+            const frontendBaseUrl = window.location.origin;
+            const quoteUrl = `${frontendBaseUrl}/quote/view/${shareToken}`;
+            const destination = quote?.requirementId?.destination || 'your destination';
+            const price = costs.final.toLocaleString();
+            const clientName = quote?.requirementId?.contactInfo?.name || 'there';
+
+            // Sanitize phone to E.164 digits only (e.g. +91 98765-43210 → 919876543210)
+            const rawPhone = quote?.requirementId?.contactInfo?.phone || '';
+            const sanitizedPhone = rawPhone.replace(/[^\d]/g, ''); // strip +, spaces, dashes
+
+            // Build emojis at runtime to avoid source-file encoding issues
+            const plane = String.fromCodePoint(0x2708, 0xFE0F);
+            const pin = String.fromCodePoint(0x1F4CD);
+            const calendar = String.fromCodePoint(0x1F4C5);
+            const money = String.fromCodePoint(0x1F4B0);
+            const down = String.fromCodePoint(0x1F447);
+            const rupee = String.fromCodePoint(0x20B9);
+
+            const message = [
+                `${plane} *Travel Quote from VoyageGen*`,
+                ``,
+                `Hi ${clientName}! Your personalized trip quote is ready.`,
+                ``,
+                `${pin} *Destination:* ${destination}`,
+                `${calendar} *Duration:* ${quote?.requirementId?.duration} Days`,
+                `${money} *Total Price:* ${rupee}${price}`,
+                ``,
+                `View your quote here ${down}`,
+                quoteUrl,
+            ].join('\n');
+
+            // Use official WhatsApp API URL for reliable encoding
+            const waUrl = sanitizedPhone
+                ? `https://api.whatsapp.com/send?phone=${sanitizedPhone}&text=${encodeURIComponent(message)}`
+                : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+
+            window.open(waUrl, '_blank');
+        } catch (error) {
+            console.error('Error sending via WhatsApp:', error);
+            alert('Failed to generate WhatsApp link. Please try again.');
+        } finally {
+            setSendingWhatsApp(false);
         }
     };
 
@@ -250,11 +304,20 @@ const QuoteEditor: React.FC = () => {
 
                             <button
                                 onClick={handleSend}
-                                disabled={saving || sending}
+                                disabled={saving || sending || sendingWhatsApp}
                                 className="bg-emerald-500 text-black px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 disabled:opacity-50"
                             >
                                 {sending ? <FaSpinner className="animate-spin" /> : <FaEnvelope />}
-                                Send to Client
+                                Email
+                            </button>
+
+                            <button
+                                onClick={handleSendWhatsApp}
+                                disabled={saving || sending || sendingWhatsApp}
+                                className="bg-[#25D366] text-black px-6 py-2.5 rounded-xl font-bold hover:bg-[#1ebe59] transition-all shadow-lg shadow-[#25D366]/20 flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {sendingWhatsApp ? <FaSpinner className="animate-spin" /> : <FaWhatsapp />}
+                                WhatsApp
                             </button>
                         </div>
                     </div>
