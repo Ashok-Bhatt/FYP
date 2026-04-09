@@ -59,7 +59,7 @@ const DestinationShowcase: React.FC = () => {
     }, []);
 
     return (
-        <section ref={containerRef} className="h-screen w-full bg-black overflow-hidden relative flex flex-col justify-center perspective-container">
+        <section id="destinations" ref={containerRef} className="h-screen w-full bg-black overflow-hidden relative flex flex-col justify-center perspective-container">
             {/* Header stays pinned */}
             <div className="absolute top-[10%] left-0 w-full px-[5vw] lg:px-[10vw] z-20 pointer-events-none">
                 <h2 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50 mb-4 drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">

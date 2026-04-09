@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 const PlanJourney: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const token = user?.token || '';
+    const token = user?.token;
 
 const dateInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -47,9 +47,9 @@ const dateInputRef = useRef<HTMLInputElement>(null);
         e.preventDefault();
         setLoading(true);
         try {
-            const headers = { 
+            const headers = {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
             };
             
             await axios.post(`${import.meta.env.VITE_API_URL}/api/requirements`, formData, { headers });

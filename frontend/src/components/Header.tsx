@@ -57,7 +57,7 @@ const Header: React.FC = () => {
                             Features
                             <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-emerald-400 transition-all duration-300 group-hover:w-full" />
                         </a>
-                        <a href="#competitors" className="hover:text-emerald-400 transition-colors relative group">
+                        <a href="#comparison" className="hover:text-emerald-400 transition-colors relative group">
                             Compare
                             <span className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-emerald-400 transition-all duration-300 group-hover:w-full" />
                         </a>
@@ -96,7 +96,7 @@ const Header: React.FC = () => {
             }`}>
                 <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium text-white/80 hover:text-emerald-400">How It Works</a>
                 <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium text-white/80 hover:text-emerald-400">Features</a>
-                <a href="#competitors" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium text-white/80 hover:text-emerald-400">Compare</a>
+                <a href="#comparison" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium text-white/80 hover:text-emerald-400">Compare</a>
                 <a href="#destinations" onClick={() => setMobileMenuOpen(false)} className="text-xl font-medium text-white/80 hover:text-emerald-400">Destinations</a>
                 
                 <div className="flex flex-col gap-4 mt-8 w-64">

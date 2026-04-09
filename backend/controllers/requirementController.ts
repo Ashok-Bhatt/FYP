@@ -74,7 +74,11 @@ export const updateRequirementStatus = async (req: Request, res: Response) => {
 // @access  Private (User)
 export const getUserRequirements = async (req: Request, res: Response) => {
     try {
-        const requirements = await Requirement.find({ userId: req.user.id }).sort({ createdAt: -1 });
+        if (!req.user?._id) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        const requirements = await Requirement.find({ userId: req.user._id }).sort({ createdAt: -1 });
         res.json(requirements);
     } catch (error: unknown) {
         handleError(res, error, 'Error fetching user requirements');
