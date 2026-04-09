@@ -136,8 +136,8 @@ const PartnerDashboard: React.FC = () => {
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Partner Dashboard</h1>
-                    <p className="text-gray-400 mt-1">Track your performance and manage your quotes</p>
+                    <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Partner Dashboard</h1>
+                    <p className="mt-1" style={{ color: 'var(--text-muted)' }}>Track your performance and manage your quotes</p>
                 </div>
             </div>
 

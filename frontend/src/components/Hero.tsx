@@ -5,6 +5,7 @@ import * as THREE from 'three';
 // @ts-ignore
 import CLOUDS from 'vanta/dist/vanta.clouds.min';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,32 +18,38 @@ const Hero: React.FC<HeroProps> = () => {
     const textRef = useRef<HTMLDivElement>(null);
     const vantaRef = useRef<HTMLDivElement>(null);
     const [vantaEffect, setVantaEffect] = useState<any>(null);
+    const { isDark } = useTheme();
 
     useEffect(() => {
-        if (!vantaEffect && vantaRef.current) {
-            setVantaEffect(
-                CLOUDS({
-                    el: vantaRef.current,
-                    THREE: THREE,
-                    mouseControls: true,
-                    touchControls: true,
-                    gyroControls: false,
-                    minHeight: 200.00,
-                    minWidth: 200.00,
-                    skyColor: 0x68b8d7,
-                    cloudColor: 0xffffff,
-                    cloudShadowColor: 0x183550,
-                    sunColor: 0xff9919,
-                    sunGlareColor: 0xff6633,
-                    sunlightColor: 0xff9933,
-                    speed: 1.0
-                })
-            );
+        if (!vantaRef.current) return;
+
+        if (vantaEffect) {
+            vantaEffect.destroy();
         }
+
+        const effect = CLOUDS({
+            el: vantaRef.current,
+            THREE: THREE,
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200,
+            minWidth: 200,
+            skyColor: isDark ? 0x08111f : 0x79c7de,
+            cloudColor: 0xffffff,
+            cloudShadowColor: isDark ? 0x050816 : 0x5e8aa0,
+            sunColor: isDark ? 0x0ea5e9 : 0xffd166,
+            sunGlareColor: isDark ? 0x38bdf8 : 0xffb703,
+            sunlightColor: isDark ? 0x34d399 : 0xfff3b0,
+            speed: isDark ? 0.8 : 1
+        });
+
+        setVantaEffect(effect);
+
         return () => {
-            if (vantaEffect) vantaEffect.destroy();
+            effect.destroy();
         };
-    }, [vantaEffect]);
+    }, [isDark]);
 
     useEffect(() => {
         const tl = gsap.timeline();
@@ -68,14 +75,16 @@ const Hero: React.FC<HeroProps> = () => {
 
     const title = "Where smart planning meets unforgettable journeys.";
     const words = title.split(" ");
+    const titleClass = isDark ? 'text-white drop-shadow-[0_14px_44px_rgba(0,0,0,0.45)]' : 'text-slate-950 drop-shadow-[0_12px_30px_rgba(255,255,255,0.4)]';
+    const subtitleClass = isDark ? 'text-slate-100' : 'text-slate-800';
 
     return (
-        <section ref={heroRef} className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-black">
+        <section ref={heroRef} className="relative flex h-screen w-full items-center justify-center overflow-hidden">
             <div ref={vantaRef} className="absolute inset-0 z-0" />
-            <div className="absolute inset-0 z-10 bg-black/10 pointer-events-none" />
+            <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'var(--hero-overlay)' }} />
             <div className="relative z-20 container mx-auto px-6 text-center flex flex-col items-center justify-center h-full pt-20">
                 <div className="mb-6">
-                    <span className="inline-block py-1 px-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium tracking-widest uppercase text-emerald-800 mb-6 animate-[fadeIn_1s_ease-out_1s_forwards] opacity-0 shadow-sm">
+                    <span className="inline-block rounded-full border px-3 py-1 text-xs font-medium tracking-widest uppercase text-emerald-600 mb-6 animate-[fadeIn_1s_ease-out_1s_forwards] opacity-0 shadow-sm backdrop-blur-md" style={{ background: 'var(--surface-soft)', borderColor: 'var(--border-soft)' }}>
                         Redefining Luxury Travel
                     </span>
                 </div>
@@ -84,29 +93,28 @@ const Hero: React.FC<HeroProps> = () => {
                     {words.map((word, wordIndex) => (
                         <span key={wordIndex} className="inline-block whitespace-nowrap">
                             {word.split('').map((char, charIndex) => (
-                                <span key={charIndex} className="char inline-block text-white drop-shadow-lg font-serif text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight py-1">{char}</span>
+                                <span key={charIndex} className={`char inline-block font-serif text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight py-1 ${titleClass}`}>{char}</span>
                             ))}
                         </span>
                     ))}
                 </div>
 
-                <p className="text-lg md:text-xl text-white max-w-xl mx-auto mb-12 font-medium opacity-0 animate-[fadeIn_1s_ease-out_1.5s_forwards] leading-relaxed drop-shadow-md">
+                <p className={`max-w-xl mx-auto mb-12 text-lg md:text-xl font-medium opacity-0 animate-[fadeIn_1s_ease-out_1.5s_forwards] leading-relaxed ${subtitleClass}`}>
                     Curated journeys for the modern explorer. <br className="hidden md:block" />
                     Where AI precision meets human wanderlust.
                 </p>
 
                 <Link to="/signup">
-                    <button className="group relative px-10 py-4 bg-white text-black rounded-full font-serif font-medium text-lg overflow-hidden transition-all hover:scale-105 opacity-0 animate-[fadeIn_1s_ease-out_1.8s_forwards] shadow-xl hover:shadow-2xl">
-                        <span className="relative z-10 group-hover:text-white transition-colors duration-500">Start Your Journey</span>
-                        <div className="absolute inset-0 bg-emerald-900 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ease-out" />
+                    <button className="group relative overflow-hidden rounded-full px-10 py-4 font-serif text-lg font-medium text-white transition-all hover:scale-105 opacity-0 animate-[fadeIn_1s_ease-out_1.8s_forwards] shadow-xl hover:shadow-2xl bg-emerald-500 hover:bg-emerald-600">
+                        <span className="relative z-10">Start Your Journey</span>
                     </button>
                 </Link>
             </div>
 
             {/* Scroll Indicator */}
             <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-0 animate-[fadeIn_1s_ease-out_2.5s_forwards]">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-white/70 font-bold">Explore</span>
-                <div className="w-[1px] h-12 bg-gradient-to-b from-white/0 via-white to-white/0" />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-bold" style={{ color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(15,23,42,0.72)' }}>Explore</span>
+                <div className="w-[1px] h-12" style={{ background: isDark ? 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.9), rgba(255,255,255,0))' : 'linear-gradient(to bottom, rgba(15,23,42,0), rgba(15,23,42,0.9), rgba(15,23,42,0))' }} />
             </div>
         </section>
     );

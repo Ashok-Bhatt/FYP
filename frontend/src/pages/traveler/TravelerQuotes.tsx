@@ -103,7 +103,7 @@ const TravelerQuotes: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="page-shell">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header */}
                 <motion.div
@@ -113,10 +113,10 @@ const TravelerQuotes: React.FC = () => {
                 >
                     <div className="flex justify-between items-start mb-4">
                         <div>
-                            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-[var(--text-primary)] to-slate-500 bg-clip-text text-transparent mb-2">
                                 {requirementId ? 'Specific Travel Quotes' : 'My Travel Quotes'}
                             </h1>
-                            <p className="text-gray-400 text-lg">
+                            <p className="text-lg" style={{ color: 'var(--text-muted)' }}>
                                 {requirementId ? 'Viewing quotes for a specific requirement' : 'View and manage your travel quotations'}
                             </p>
                             {requirementId && (

@@ -4,7 +4,7 @@ import AgentHeader from '../components/AgentHeader';
 
 const AgentLayout: React.FC = () => {
     return (
-        <div className="min-h-screen bg-black">
+        <div className="page-shell">
             <AgentHeader />
             <main>
                 <Outlet />

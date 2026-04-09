@@ -4,7 +4,7 @@ import TravelerHeader from '../components/TravelerHeader';
 
 const TravelerLayout: React.FC = () => {
     return (
-        <div className="min-h-screen bg-black">
+        <div className="page-shell">
             <TravelerHeader />
             <main>
                 <Outlet />

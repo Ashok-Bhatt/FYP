@@ -2,7 +2,9 @@ import React, { useEffect, ReactNode } from 'react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AnimatedRoutes from './components/AnimatedRoutes';
+import ThemeToggle from './components/ThemeToggle';
 
 interface LenisWrapperProps {
     children: ReactNode;
@@ -52,15 +54,20 @@ const LenisWrapper: React.FC<LenisWrapperProps> = ({ children }) => {
 
 const App: React.FC = () => {
     return (
-        <AuthProvider>
-            <Router>
-                <LenisWrapper>
-                    <div className="font-sans antialiased bg-black text-white selection:bg-emerald-500 selection:text-white">
-                        <AnimatedRoutes />
-                    </div>
-                </LenisWrapper>
-            </Router>
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthProvider>
+                <Router>
+                    <LenisWrapper>
+                        <div className="app-shell font-sans antialiased selection:bg-emerald-500 selection:text-white">
+                            <div className="fixed right-4 top-4 z-[90] md:right-6 md:top-6">
+                                <ThemeToggle />
+                            </div>
+                            <AnimatedRoutes />
+                        </div>
+                    </LenisWrapper>
+                </Router>
+            </AuthProvider>
+        </ThemeProvider>
     );
 };
 

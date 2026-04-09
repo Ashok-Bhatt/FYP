@@ -107,16 +107,16 @@ const AgentAnalytics = () => {
   const periodProfit = filteredData.reduce((sum, d) => sum + (d.profit || 0), 0);
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white pb-20">
+    <div className="page-shell min-h-screen font-sans selection:bg-emerald-500 selection:text-white pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
 
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-[var(--text-primary)] to-slate-500 bg-clip-text text-transparent mb-2">
               Business Intelligence
             </h1>
-            <p className="text-gray-400">Comprehensive overview of your sales funnel and margins</p>
+            <p style={{ color: 'var(--text-muted)' }}>Comprehensive overview of your sales funnel and margins</p>
           </div>
           <div className="bg-zinc-900/80 border border-white/5 rounded-xl px-4 py-2 flex items-center gap-3">
             <div className="text-right">

@@ -24,7 +24,7 @@ const AgentHeader: React.FC = () => {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-black/50 border-b border-white/10">
+        <header className="theme-header sticky top-0 z-50 w-full border-b backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     {/* Logo */}
@@ -32,7 +32,7 @@ const AgentHeader: React.FC = () => {
                         <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
                             V
                         </div>
-                        <span className="text-xl font-serif font-bold text-white tracking-wide">VoyageGen</span>
+                        <span className="text-xl font-serif font-bold tracking-wide" style={{ color: 'var(--text-primary)' }}>VoyageGen</span>
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -42,11 +42,12 @@ const AgentHeader: React.FC = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={`relative px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all duration-300 ${isActive(item.path)
-                                    ? 'text-emerald-400 bg-emerald-500/10'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    ? 'text-emerald-500 bg-emerald-500/10'
+                                    : 'hover:bg-white/5'
                                     }`}
+                                style={!isActive(item.path) ? { color: 'var(--text-muted)' } : undefined}
                             >
-                                <item.icon className={isActive(item.path) ? 'text-emerald-400' : 'text-gray-500'} />
+                                <item.icon className={isActive(item.path) ? 'text-emerald-500' : ''} style={!isActive(item.path) ? { color: 'var(--text-muted)' } : undefined} />
                                 {item.label}
                                 {isActive(item.path) && (
                                     <motion.div
@@ -60,11 +61,11 @@ const AgentHeader: React.FC = () => {
 
                     {/* User Profile & Logout */}
                     <div className="hidden md:flex items-center gap-4">
-                        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-3 rounded-full border px-4 py-2" style={{ background: 'var(--surface-soft)', borderColor: 'var(--border-soft)' }}>
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
                                 {user?.name?.charAt(0) || 'A'}
                             </div>
-                            <span className="text-sm font-medium text-gray-300">{user?.name || 'Agent'}</span>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{user?.name || 'Agent'}</span>
                         </div>
                         <button
                             onClick={handleLogout}
@@ -78,7 +79,8 @@ const AgentHeader: React.FC = () => {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="md:hidden p-2 text-gray-400 hover:text-white"
+                        className="md:hidden p-2"
+                        style={{ color: 'var(--text-muted)' }}
                     >
                         {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
                     </button>
@@ -92,7 +94,8 @@ const AgentHeader: React.FC = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden bg-zinc-900 border-b border-white/10 overflow-hidden"
+                        className="md:hidden overflow-hidden border-b"
+                        style={{ background: 'var(--surface-strong)', borderColor: 'var(--border-soft)' }}
                     >
                         <div className="px-4 py-4 space-y-2">
                             {navItems.map((item) => (
@@ -101,22 +104,23 @@ const AgentHeader: React.FC = () => {
                                     to={item.path}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className={`block px-4 py-3 rounded-xl flex items-center gap-3 text-base font-medium ${isActive(item.path)
-                                        ? 'bg-emerald-500/10 text-emerald-400'
-                                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                        ? 'bg-emerald-500/10 text-emerald-500'
+                                        : 'hover:bg-white/5'
                                         }`}
+                                    style={!isActive(item.path) ? { color: 'var(--text-muted)' } : undefined}
                                 >
                                     <item.icon />
                                     {item.label}
                                 </Link>
                             ))}
-                            <div className="pt-4 mt-4 border-t border-white/10">
+                            <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--border-soft)' }}>
                                 <div className="flex items-center gap-3 px-4 mb-4">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center text-sm font-bold text-white">
                                         {user?.name?.charAt(0) || 'A'}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">{user?.name}</p>
-                                        <p className="text-xs text-gray-500">{user?.email}</p>
+                                        <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
+                                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
                                     </div>
                                 </div>
                                 <button

@@ -47,11 +47,11 @@ const AgentDashboard: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="page-shell flex items-center justify-center">
                 <div className="text-center">
                     <FaSpinner className="animate-spin text-4xl text-emerald-400 mx-auto mb-4" />
-                    <div className="text-white text-xl font-medium">Preparing your dashboard...</div>
-                    <div className="text-gray-400 text-sm mt-2">Fetching latest travel data</div>
+                    <div className="text-xl font-medium" style={{ color: 'var(--text-primary)' }}>Preparing your dashboard...</div>
+                    <div className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>Fetching latest travel data</div>
                 </div>
             </div>
         );
@@ -85,7 +85,7 @@ const AgentDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="page-shell">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Header */}
                 <motion.div
@@ -93,10 +93,10 @@ const AgentDashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-12"
                 >
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
+                    <h1 className="mb-2 bg-gradient-to-r from-[var(--text-primary)] to-slate-500 bg-clip-text text-4xl font-bold text-transparent">
                         Agent Dashboard
                     </h1>
-                    <p className="text-gray-400 text-lg">Manage travel requirements and create amazing quotes</p>
+                    <p className="text-lg" style={{ color: 'var(--text-muted)' }}>Manage travel requirements and create amazing quotes</p>
                 </motion.div>
 
                 {/* Stats Overview */}

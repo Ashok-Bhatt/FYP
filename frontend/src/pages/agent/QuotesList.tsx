@@ -370,14 +370,14 @@ const QuotesList: React.FC = () => {
     if (loading) return <LoadingState />;
 
     return (
-        <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white">
+        <div className="page-shell min-h-screen font-sans selection:bg-emerald-500 selection:text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
                     <div>
-                        <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
+                        <h1 className="text-4xl font-serif font-bold bg-gradient-to-r from-[var(--text-primary)] to-slate-500 bg-clip-text text-transparent mb-2">
                             Generated Quotes
                         </h1>
-                        <p className="text-gray-400">Manage and share your travel quotations</p>
+                        <p style={{ color: 'var(--text-muted)' }}>Manage and share your travel quotations</p>
                     </div>
 
                     <div className="flex items-center gap-4">

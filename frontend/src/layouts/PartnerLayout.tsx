@@ -4,7 +4,7 @@ import PartnerHeader from '../components/PartnerHeader';
 
 const PartnerLayout: React.FC = () => {
     return (
-        <div className="min-h-screen bg-black">
+        <div className="page-shell">
             <PartnerHeader />
             <main>
                 <Outlet />
