@@ -59,6 +59,7 @@ const PublicQuoteView: React.FC = () => {
                 finalCost: quote.costs?.final || 0,
                 itinerary: quote.itinerary,
                 pexelsKey: import.meta.env.VITE_PEXELS_API_KEY as string,
+                apiBaseUrl: import.meta.env.VITE_API_URL as string,
             });
         } catch (err) {
             console.error('PDF generation error:', err);
@@ -325,7 +326,8 @@ const PublicQuoteView: React.FC = () => {
                             >
                                 <ItineraryTimeline 
                                     days={quote.itinerary} 
-                                    destination={requirement.destination} 
+                                    destination={requirement.destination}
+                                    pexelsKey={import.meta.env.VITE_PEXELS_API_KEY}
                                 />
                             </motion.div>
                         )}

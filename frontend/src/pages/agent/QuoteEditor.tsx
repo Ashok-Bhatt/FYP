@@ -219,6 +219,7 @@ const QuoteEditor: React.FC = () => {
                 finalCost: costs.final,
                 itinerary,
                 pexelsKey: import.meta.env.VITE_PEXELS_API_KEY as string,
+                apiBaseUrl: import.meta.env.VITE_API_URL as string,
             });
         } catch (error) {
             console.error('PDF generation error:', error);
@@ -400,6 +401,7 @@ const QuoteEditor: React.FC = () => {
                                 <ItineraryTimeline
                                     days={itinerary}
                                     destination={quote?.requirementId?.destination || ''}
+                                    pexelsKey={import.meta.env.VITE_PEXELS_API_KEY}
                                     onRegenerate={handleGenerateItinerary}
                                     isRegenerating={generatingItinerary}
                                 />
