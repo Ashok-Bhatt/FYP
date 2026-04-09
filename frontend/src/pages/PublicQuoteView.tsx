@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHotel, FaPlane, FaTicketAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaMoon, FaCity, FaBed, FaClock } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHotel, FaPlane, FaTicketAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaMoon, FaCity, FaBed, FaClock, FaFilePdf } from 'react-icons/fa';
 import ItineraryTimeline from '../components/ItineraryTimeline';
+import { generateItineraryPDF } from '../utils/generatePDF';
 
 const PublicQuoteView: React.FC = () => {
     const { token } = useParams();
@@ -11,6 +12,7 @@ const PublicQuoteView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const sectionDurations = useRef<Record<string, number>>({});
     const activeSection = useRef<string | null>(null);
 
@@ -37,6 +39,32 @@ const PublicQuoteView: React.FC = () => {
             alert('Failed to update quote status. Please try again.');
         } finally {
             setActionLoading(false);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!quote.itinerary || quote.itinerary.length === 0) {
+            alert('No itinerary available for this quote to generate a PDF.');
+            return;
+        }
+        setDownloadingPdf(true);
+        try {
+            const requirement = quote.requirementId;
+            await generateItineraryPDF({
+                destination: requirement.destination || 'Trip',
+                duration: requirement.duration || quote.itinerary.length,
+                tripType: requirement.tripType || 'Leisure',
+                clientName: requirement.contactInfo?.name || 'Valued Traveler',
+                hotel: quote.sections?.hotels?.[0]?.name || 'Your Hotel',
+                finalCost: quote.costs?.final || 0,
+                itinerary: quote.itinerary,
+                pexelsKey: import.meta.env.VITE_PEXELS_API_KEY as string,
+            });
+        } catch (err) {
+            console.error('PDF generation error:', err);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setDownloadingPdf(false);
         }
     };
 
@@ -353,6 +381,19 @@ const PublicQuoteView: React.FC = () => {
                             {(quote.status === 'ACCEPTED' || quote.status === 'DECLINED') && (
                                 <div className="mt-6 text-center text-sm text-gray-500">
                                     This quote can no longer be modified. Please contact your travel agent for further assistance.
+                                </div>
+                            )}
+
+                            {quote.itinerary && quote.itinerary.length > 0 && (
+                                <div className="space-y-3 mt-6 border-t border-white/10 pt-6">
+                                    <button
+                                        onClick={handleDownloadPdf}
+                                        disabled={downloadingPdf}
+                                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {downloadingPdf ? <FaSpinner className="animate-spin" /> : <FaFilePdf className="text-red-400" />}
+                                        Download Proposal PDF
+                                    </button>
                                 </div>
                             )}
                         </motion.div>
