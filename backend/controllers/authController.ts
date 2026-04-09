@@ -15,7 +15,7 @@ const generateToken = (id: string) => {
 // @route   POST /api/auth/signup
 // @access  Public
 export const registerUser = async (req: Request, res: Response) => {
-    const { name, email, password, role, companyName, destinations } = req.body;
+    const { name, email, password, role, companyName } = req.body;
 
     try {
         if (!name || !email || !password) {
@@ -36,7 +36,6 @@ export const registerUser = async (req: Request, res: Response) => {
             password,
             role,
             companyName,
-            destinations,
         });
 
         if (user) {

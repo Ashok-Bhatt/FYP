@@ -9,6 +9,12 @@ import { QuoteSection } from '../../shared/types';
 import { handleError } from '../utils/errorHandler';
 import { sendQuoteEmail } from '../utils/emailUtils';
 import { generateItinerary as groqGenerateItinerary } from '../utils/groqUtils';
+import {
+  calculateFinalCost,
+  getRoomPriceByName,
+  findActivitiesByNames,
+  findSightseeingsByNames,
+} from '../utils/pricingUtils';
 
 // Comparison interfaces
 interface ComparisonInsights {
@@ -92,123 +98,126 @@ export const broadcastQuoteView = (quoteId: string, timestamp: Date) => {
     });
 };
 
-// @desc    Auto-generate quotes for selected partners
+// @desc    Auto-generate a single quote for selected partner with customizations
 // @route   POST /api/quotes/generate
 // @access  Private (Agent)
-export const generateQuotes = async (req: Request, res: Response) => {
-    const { requirementId, partnerIds } = req.body;
+//
+// Request Payload:
+// {
+//   requirementId: string,
+//   partnerId: string,
+//   roomTypeName: string,
+//   activities: string[],      // activity names
+//   sightSeeings: string[]     // sightseeing names
+// }
+export const generateQuote = async (req: Request, res: Response) => {
+    const { requirementId, partnerId, roomTypeName, activities, sightSeeings } = req.body;
 
     try {
+        // Validate required fields
+        if (!requirementId || !partnerId || !roomTypeName) {
+            res.status(400).json({
+                message: 'Missing required fields: requirementId, partnerId, roomTypeName',
+            });
+            return;
+        }
+
+        // Fetch requirement
         const requirement = await Requirement.findById(requirementId);
         if (!requirement) {
             res.status(404).json({ message: 'Requirement not found' });
             return;
         }
 
-        const quotes: IQuote[] = [];
-
-        for (const partnerId of partnerIds) {
-            // Fetch partner profile instead of inventory
-            const partner = await PartnerProfile.findOne({ userId: partnerId }).populate('userId', 'name email');
-            if (!partner) continue;
-
-            // Build quote sections using partner data
-            const quoteSections: QuoteSection = {
-                hotels: [],
-                transport: [],
-                activities: [],
-            };
-
-            let netCost = 0;
-            const duration = requirement.duration || 6;
-            const adults = requirement.pax?.adults || 2;
-
-            // 1. Add Hotel based on partner's room types and pricing
-            if (partner.type === 'Hotel' || partner.type === 'DMC' || partner.type === 'Mixed') {
-                // Use the cheapest room type as default
-                const roomTypes = partner.roomTypes || [];
-                const defaultRoom = roomTypes.length > 0 ? roomTypes[0] : { name: 'Deluxe Room', price: partner.startingPrice || 5000 };
-                const hotelPrice = defaultRoom.price;
-                const nights = duration - 1;
-                const roomCost = hotelPrice * nights;
-
-                quoteSections.hotels.push({
-                    name: partner.companyName,
-                    city: partner.destinations || requirement.destination || '',
-                    roomType: defaultRoom.name,
-                    nights: nights,
-                    unitPrice: hotelPrice,
-                    qty: 1,
-                    total: roomCost,
-                });
-                netCost += roomCost;
-            }
-
-            // 2. Add Transport (only for DMC and Mixed types since CabProvider is removed)
-            if (partner.type === 'DMC' || partner.type === 'Mixed') {
-                const transportPrice = 3000; // Default per day
-                const days = duration;
-                const transportCost = transportPrice * days;
-
-                quoteSections.transport.push({
-                    type: 'Private Sedan',
-                    days: days,
-                    unitPrice: transportPrice,
-                    total: transportCost,
-                });
-                netCost += transportCost;
-            }
-
-            // 3. Add Activities based on partner's activities and sightseeings
-            // Use activities first, then sightseeings as fallback
-            const activitiesToAdd = partner.activities && partner.activities.length > 0 
-                ? partner.activities.slice(0, 3) 
-                : (partner.sightSeeings && partner.sightSeeings.length > 0 
-                    ? partner.sightSeeings.slice(0, 3) 
-                    : []);
-
-            activitiesToAdd.forEach((activity: any, index: number) => {
-                const activityName = activity.name || 'Activity';
-                const activityPrice = activity.entryFee || 1500 + (index * 500); // Use entryFee if available
-                const activityCost = activityPrice * adults;
-
-                quoteSections.activities.push({
-                    name: activityName,
-                    unitPrice: activityPrice,
-                    qty: adults,
-                    total: activityCost,
-                });
-                netCost += activityCost;
-            });
-
-            // Create Quote Record
-            const quote = await Quote.create({
-                requirementId,
-                partnerId: partner.userId._id,
-                agentId: req.user!._id,
-                title: `${requirement.destination} Trip - ${requirement.tripType}`,
-                sections: quoteSections,
-                costs: {
-                    net: netCost,
-                    margin: 10, // Default 10%
-                    final: netCost * 1.1,
-                    perHead: (netCost * 1.1) / adults,
-                },
-                status: 'DRAFT',
-            });
-
-            quotes.push(quote);
+        // Fetch partner profile
+        const partner = await PartnerProfile.findOne({ userId: partnerId }).populate('userId', 'name email');
+        if (!partner) {
+            res.status(404).json({ message: 'Partner not found' });
+            return;
         }
+
+        // Extract trip details
+        const duration = requirement.duration || 6;
+        const adults = requirement.pax?.adults || 2;
+        const children = requirement.pax?.children || 0;
+        const nights = Math.max(1, duration - 1);
+
+        // Get room price by name
+        const roomPrice = getRoomPriceByName(partner, roomTypeName);
+        if (!roomPrice) {
+            res.status(400).json({
+                message: `Room type "${roomTypeName}" not found or partner has no room types defined`,
+            });
+            return;
+        }
+
+        // Find selected activities and sightseeings
+        const selectedActivities = findActivitiesByNames(partner, activities || []);
+        const selectedSightseeings = findSightseeingsByNames(partner, sightSeeings || []);
+
+        // Calculate final cost using new pricing formula
+        const costResult = calculateFinalCost({
+            roomPrice,
+            totalDays: nights,
+            noOfAdults: adults,
+            noOfChildren: children,
+            activities: selectedActivities,
+            sightseeings: selectedSightseeings,
+            margin: 10, // Default 10% margin
+        });
+
+        // Build quote sections
+        const quoteSections: QuoteSection = {
+            hotels: [{
+                name: partner.companyName,
+                city: partner.address?.city || requirement.destination || '',
+                roomType: roomTypeName,
+                nights: nights,
+                unitPrice: roomPrice,
+                qty: 1,
+                total: costResult.breakdown.hotels,
+            }],
+            transport: [], // Can be added later if needed
+            activities: selectedActivities.map(activity => ({
+                name: activity.name,
+                unitPrice: activity.price,
+                qty: adults + 0.5 * children,
+                total: activity.price * (adults + 0.5 * children),
+            })),
+        };
+
+        // Create single Quote Record
+        const quote = await Quote.create({
+            requirementId,
+            partnerId: partner.userId._id,
+            agentId: req.user!._id,
+            title: `${requirement.destination} Trip - ${requirement.tripType}`,
+            sections: quoteSections,
+            costs: {
+                net: costResult.netCost,
+                margin: costResult.margin,
+                final: costResult.finalCost,
+                perHead: costResult.perHead,
+            },
+            status: 'DRAFT',
+        });
 
         // Update Requirement Status to QUOTES_READY
         requirement.status = 'QUOTES_READY';
         await requirement.save();
 
-        res.status(201).json(quotes);
+        res.status(201).json({
+            message: 'Quote generated successfully',
+            quote,
+            breakdown: costResult.breakdown,
+        });
     } catch (error: unknown) {
         handleError(res, error, 'Quote generation error');
     }
 };
+
+// @deprecated Kept for backward compatibility - redirects to new single-quote endpoint
+export const generateQuotes = generateQuote;
 
 // @desc    Get user's quotes
 // @route   GET /api/quotes/user

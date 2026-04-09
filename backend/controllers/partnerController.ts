@@ -7,6 +7,7 @@ import { handleError } from '../utils/errorHandler';
 import { generateEmbedding } from '../utils/geminiUtils';
 import { cosineSimilarity } from '../utils/vectorUtils';
 import { uploadBase64Image } from '../utils/cloudinary';
+import { getMinRoomPrice } from '../utils/pricingUtils';
 
 // @desc    Get current partner profile
 // @route   GET /api/partners/profile
@@ -26,8 +27,8 @@ export const getMyProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         const { 
-            companyName, destinations, type, specializations, budgetRange, 
-            description, images, amenities, startingPrice, reviews,
+            companyName, type, specializations, 
+            description, images, amenities, reviews,
             address, starRating, roomTypes, contactInfo, activities, 
             checkIn, checkOut, sightSeeings 
         } = req.body;
@@ -56,10 +57,8 @@ export const updateProfile = async (req: Request, res: Response) => {
         if (profile) {
             // Update basic fields
             if (companyName) profile.companyName = companyName;
-            if (destinations) profile.destinations = destinations;
             if (type) profile.type = type;
             if (specializations) profile.specializations = specializations;
-            if (budgetRange) profile.budgetRange = budgetRange;
             if (description !== undefined) {
                 profile.description = description;
                 if (description_embedding) profile.description_embedding = description_embedding;
@@ -69,7 +68,6 @@ export const updateProfile = async (req: Request, res: Response) => {
             // Update hotel-specific fields
             if (images) profile.images = images;
             if (amenities) profile.amenities = amenities;
-            if (startingPrice) profile.startingPrice = startingPrice;
             if (reviews !== undefined) profile.reviews = reviews;
             if (address) profile.address = address;
             if (starRating) profile.starRating = starRating;
@@ -85,15 +83,12 @@ export const updateProfile = async (req: Request, res: Response) => {
             profile = await PartnerProfile.create({
                 userId: req.user!._id,
                 companyName,
-                destinations,
                 type,
                 specializations,
-                budgetRange,
                 description,
                 description_embedding: description_embedding || [],
                 images,
                 amenities,
-                startingPrice,
                 reviews: reviews || 0,
                 address,
                 starRating,
@@ -136,37 +131,22 @@ export const filterPartners = async (req: Request, res: Response) => {
             query.type = type;
         }
 
-        // Filter by budget range
-        if (budget) {
-            const budgetNum = Number(budget);
-            const budgetQuery = {
-                'budgetRange.min': { $lte: budgetNum },
-                'budgetRange.max': { $gte: budgetNum }
-            };
-            
-            // If there's already a $or from destination, we need to combine them
-            if (query.$or) {
-                query.$and = [
-                    { $or: query.$or },
-                    { $or: [budgetQuery, { budgetRange: { $exists: false } }, { 'budgetRange.min': null }, { 'budgetRange.max': null }] }
-                ];
-                delete query.$or;
-            } else {
-                query.$or = [
-                    budgetQuery,
-                    { budgetRange: { $exists: false } },
-                    { 'budgetRange.min': null },
-                    { 'budgetRange.max': null }
-                ];
-            }
-        }
-
         // Filter by hotel star rating
         if (hotelStar) {
             query.starRating = { $gte: Number(hotelStar) };
         }
 
         let partners = await PartnerProfile.find(query).populate('userId', 'name email');
+
+        // Filter by budget using room-based pricing (post-query filter)
+        if (budget) {
+            const budgetNum = Number(budget);
+            partners = partners.filter(partner => {
+                const minRoomPrice = getMinRoomPrice(partner);
+                // Include partners with no room prices or with prices within budget
+                return minRoomPrice === null || minRoomPrice <= budgetNum;
+            });
+        }
 
         // Apply semantic search if search query is provided
         if (searchQuery && typeof searchQuery === 'string') {

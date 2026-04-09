@@ -3,16 +3,13 @@ export const indianPartners = [
         email: "taj.palace.delhi@example.com",
         password: "partner123",
         companyName: "The Taj Palace Delhi",
-        destinations: "New Delhi",
         type: "Hotel",
         specializations: ["Luxury", "Heritage", "Business"],
-        budgetRange: { min: 15000, max: 45000 },
         rating: 5,
         description: "An iconic luxury hotel in the heart of India's capital, The Taj Palace Delhi offers world-class hospitality with stunning views of the city. Experience regal comfort with modern amenities, Michelin-starred dining, and impeccable service.",
         images: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"],
         amenities: ["Rooftop Pool", "Jiva Spa", "Multiple Dining Options", "Business Center", "Concierge Service", "Valet Parking"],
-        startingPrice: 18500,
-        
+
         // Hotel-specific fields
         address: {
             street: "Man Singh Road, Area B",
@@ -59,15 +56,12 @@ export const indianPartners = [
         email: "oberoi.udaivilas@example.com",
         password: "partner123",
         companyName: "The Oberoi Udaivilas",
-        destinations: "Udaipur",
         type: "Hotel",
         specializations: ["Ultra-Luxury", "Honeymoon", "Royal"],
-        budgetRange: { min: 35000, max: 120000 },
         rating: 5,
         description: "Situated on the banks of Lake Pichola, The Oberoi Udaivilas is a magnificent palace hotel that epitomizes royal Rajasthani hospitality. With intricate architecture, private pools, and breathtaking lake views, it's a dream destination.",
         images: ["https://images.unsplash.c om/photo-1582719508461-905c673771fd?w=800"],
         amenities: ["Private Pool Villas", "Spa", "Lake View Dining", "Boat Rides", "Cultural Performances", "Butler Service"],
-        startingPrice: 42000,
         
         // Hotel-specific fields
         address: {
@@ -113,17 +107,13 @@ export const indianPartners = [
         email: "taj.mahal.palace.mumbai@example.com",
         password: "partner123",
         companyName: "Taj Mahal Palace Mumbai",
-        destinations: "Mumbai",
         type: "Hotel",
         specializations: ["Iconic", "Luxury", "Heritage"],
-        budgetRange: { min: 25000, max: 85000 },
         rating: 5,
         description: "India's most iconic hotel, the Taj Mahal Palace Mumbai stands majestically overlooking the Arabian Sea and the Gateway of India. A symbol of Indian hospitality since 1903, it combines old-world charm with modern luxury.",
         images: ["https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"],
         amenities: ["Sea-facing Rooms", "Jiva Spa", "Zodiac Grill", "Heritage Wing", "Pool", "Shopping Arcade"],
-        startingPrice: 28500,
         
-        // Hotel-specific fields
         address: {
             street: "Apollo Bandar",
             city: "Mumbai",
@@ -169,17 +159,13 @@ export const indianPartners = [
         email: "leela.palace.bangalore@example.com",
         password: "partner123",
         companyName: "The Leela Palace Bangalore",
-        destinations: "Bangalore",
         type: "Hotel",
         specializations: ["Luxury", "Art", "Wellness"],
-        budgetRange: { min: 12000, max: 45000 },
         rating: 5,
         description: "Inspired by the royal Mysore Palace, The Leela Palace Bangalore is an architectural marvel featuring hand-carved furniture, original artworks, and lush gardens. A sanctuary of luxury in India's Silicon Valley.",
         images: ["https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800"],
         amenities: ["Art Gallery", "Spa", "Rooftop Pool", "Fine Dining", "Library", "Yoga Pavilion"],
-        startingPrice: 14500,
         
-        // Hotel-specific fields
         address: {
             street: "23, Old Airport Road",
             city: "Bangalore",
@@ -225,17 +211,13 @@ export const indianPartners = [
         email: "wildflower.hall.shimla@example.com",
         password: "partner123",
         companyName: "Wildflower Hall Shimla",
-        destinations: "Shimla",
         type: "Hotel",
         specializations: ["Mountain", "Luxury", "Adventure"],
-        budgetRange: { min: 18000, max: 55000 },
         rating: 5,
         description: "Perched at 8,250 feet in the Himalayas, Wildflower Hall offers panoramic views of snow-capped peaks and cedar forests. Once the residence of Lord Kitchener, it's now an Oberoi luxury retreat perfect for mountain lovers.",
         images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800"],
         amenities: ["Mountain Views", "Spa", "Heated Pool", "Adventure Activities", "Fine Dining", "Bonfire Evenings"],
-        startingPrice: 22000,
         
-        // Hotel-specific fields
         address: {
             street: "Charabra",
             city: "Shimla",
@@ -281,15 +263,12 @@ export const indianPartners = [
         email: "rambagh.palace.jaipur@example.com",
         password: "partner123",
         companyName: "Rambagh Palace Jaipur",
-        destinations: "Jaipur",
         type: "Hotel",
         specializations: ["Royal", "Heritage", "Luxury"],
-        budgetRange: { min: 30000, max: 150000 },
         rating: 5,
         description: "The former residence of the Maharaja of Jaipur, Rambagh Palace is a jewel of Rajasthan. With 47 acres of Mughal gardens, opulent suites, and royal dining experiences, it offers an authentic taste of royalty.",
         images: ["https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800"],
         amenities: ["Palace Suites", "Spa", "Royal Gardens", "Heritage Tours", "Traditional Dining", "Vintage Car Rides"],
-        startingPrice: 35000,
 
         address: {
         street: "Bhawani Singh Rd",
@@ -330,15 +309,12 @@ export const indianPartners = [
         email: "taj.exotica.goa@example.com",
         password: "partner123",
         companyName: "Taj Exotica Resort & Spa Goa",
-        destinations: "Goa",
         type: "Hotel",
         specializations: ["Beach", "Luxury", "Wellness"],
-        budgetRange: { min: 15000, max: 60000 },
         rating: 4,
         description: "Set amidst 56 acres of lush gardens and overlooking the Arabian Sea, Taj Exotica Goa is a Mediterranean-style resort offering pristine beaches, world-class spa treatments, and vibrant Goan culture.",
         images: ["https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800"],
         amenities: ["Private Beach", "Jiva Spa", "9-hole Golf Course", "Water Sports", "Multiple Pools", "Kids Club"],
-        startingPrice: 18000,
 
         address: {
         street: "Benaulim Beach",
@@ -379,15 +355,12 @@ export const indianPartners = [
         email: "aman.i.khas.ranthambore@example.com",
         password: "partner123",
         companyName: "Aman-i-Khás Ranthambore",
-        destinations: "Ranthambore",
         type: "Hotel",
         specializations: ["Wildlife", "Luxury", "Adventure"],
-        budgetRange: { min: 80000, max: 250000 },
         rating: 5,
         description: "A luxurious tented camp on the outskirts of Ranthambore National Park, Aman-i-Khás offers an intimate wildlife experience. Combining adventure with Aman's signature luxury, it's perfect for tiger safaris and nature lovers.",
         images: ["https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=800"],
         amenities: ["Luxury Tents", "Private Dining", "Spa Tent", "Tiger Safaris", "Nature Walks", "Stargazing"],
-        startingPrice: 95000,
 
         address: {
         street: "Ranthambore National Park Road",
@@ -428,15 +401,12 @@ export const indianPartners = [
         email: "itc.grand.chola.chennai@example.com",
         password: "partner123",
         companyName: "ITC Grand Chola Chennai",
-        destinations: "Chennai",
         type: "Hotel",
         specializations: ["Luxury", "Business", "Culture"],
-        budgetRange: { min: 10000, max: 40000 },
         rating: 5,
         description: "Inspired by the grandeur of the Chola dynasty, ITC Grand Chola is South India's largest luxury hotel. With stunning architecture, multiple award-winning restaurants, and a world-class spa, it's a cultural landmark.",
         images: ["https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800"],
         amenities: ["Kaya Kalp Spa", "Multiple Restaurants", "Grand Ballroom", "Pool", "Fitness Center", "Art Gallery"],
-        startingPrice: 12500,
 
         address: {
         street: "Mount Road",
@@ -473,20 +443,16 @@ export const indianPartners = [
         { name: "DakshinaChitra", images: [], description: "Cultural heritage village", entryFee: 150 }
         ]
     },
-
     {
         email: "vivanta.dal.view.srinagar@example.com",
         password: "partner123",
         companyName: "Vivanta Dal View Srinagar",
-        destinations: "Srinagar",
         type: "Hotel",
         specializations: ["Scenic", "Luxury", "Honeymoon"],
-        budgetRange: { min: 15000, max: 50000 },
         rating: 4,
         description: "Overlooking the serene Dal Lake with the Zabarwan mountains as backdrop, Vivanta Dal View offers a perfect blend of Kashmiri hospitality and modern luxury.",
         images: ["https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=800"],
         amenities: ["Lake View Rooms", "Spa", "Kashmiri Cuisine", "Shikara Rides", "Garden", "Bonfire"],
-        startingPrice: 18000,
 
         address: {
         street: "Kralsangri",
@@ -523,20 +489,16 @@ export const indianPartners = [
         { name: "Nigeen Lake", images: [], description: "Peaceful lake near Dal Lake", entryFee: 0 }
         ]
     },
-
     {
         email: "taj.falaknuma.hyderabad@example.com",
         password: "partner123",
         companyName: "Taj Falaknuma Palace Hyderabad",
-        destinations: "Hyderabad",
         type: "Hotel",
         specializations: ["Royal", "Heritage", "Luxury"],
-        budgetRange: { min: 35000, max: 150000 },
         rating: 5,
         description: "Perched 2,000 feet above Hyderabad, Falaknuma Palace means 'Mirror of the Sky'. A truly regal experience with Nizam heritage.",
         images: ["https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800"],
         amenities: ["Palace Suites", "Jiva Spa", "Vintage Car Tours", "Royal Dining", "Billiards Room", "Library"],
-        startingPrice: 45000,
 
         address: {
         street: "Falaknuma",
@@ -573,20 +535,16 @@ export const indianPartners = [
         { name: "Chowmahalla Palace", images: [], description: "Nizam's palace complex", entryFee: 200 }
         ]
     },
-
     {
         email: "kumarakom.lake.resort@example.com",
         password: "partner123",
         companyName: "Kumarakom Lake Resort",
-        destinations: "Kumarakom",
         type: "Hotel",
         specializations: ["Backwaters", "Ayurveda", "Luxury"],
-        budgetRange: { min: 12000, max: 45000 },
         rating: 4,
         description: "Set on the banks of Vembanad Lake, offering traditional Kerala architecture and Ayurvedic wellness.",
         images: ["https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800"],
         amenities: ["Heritage Villas", "Ayurveda Spa", "Houseboat Cruises", "Infinity Pool", "Traditional Cuisine", "Bird Sanctuary Tours"],
-        startingPrice: 15000,
 
         address: {
         street: "Vembanad Lake",
@@ -623,20 +581,16 @@ export const indianPartners = [
         { name: "Vaikom Temple", images: [], description: "Famous Shiva temple", entryFee: 0 }
         ]
     },
-
     {
         email: "wildernest.goa@example.com",
         password: "partner123",
         companyName: "Wildernest Nature Resort",
-        destinations: "Goa",
         type: "Hotel",
         specializations: ["Nature", "Eco-Tourism", "Adventure"],
-        budgetRange: { min: 8000, max: 25000 },
         rating: 4,
         description: "Eco-resort in Western Ghats offering jungle treks and adventure activities.",
         images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800"],
         amenities: ["Jungle Cottages", "Nature Trails", "Bird Watching", "Waterfall Rappelling", "Organic Food", "Campfire"],
-        startingPrice: 9500,
 
         address: {
         street: "Chorla Ghats",
@@ -673,19 +627,16 @@ export const indianPartners = [
         { name: "Netravali Sanctuary", images: [], description: "Wildlife sanctuary", entryFee: 200 }
         ]
     },
-      {
+    {
     email: "evolve.back.coorg@example.com",
     password: "partner123",
     companyName: "Evolve Back Coorg",
-    destinations: "Coorg",
     type: "Hotel",
     specializations: ["Plantation", "Luxury", "Wellness"],
-    budgetRange: { min: 20000, max: 65000 },
     rating: 5,
     description: "Set amidst 300 acres of coffee and spice plantations, offering luxury villas with private pools and plantation experiences.",
     images: ["https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800"],
     amenities: ["Private Pool Villas", "Spa", "Plantation Tours", "Infinity Pool", "Coorgi Cuisine", "Nature Walks"],
-    startingPrice: 24000,
 
     address: {
       street: "Siddapura",
@@ -722,20 +673,16 @@ export const indianPartners = [
       { name: "Iruppu Falls", images: [], description: "Popular waterfall trek", entryFee: 50 }
     ]
   },
-
   {
     email: "ananda.himalayas@example.com",
     password: "partner123",
     companyName: "Ananda in the Himalayas",
-    destinations: "Rishikesh",
     type: "Hotel",
     specializations: ["Wellness", "Spa", "Yoga"],
-    budgetRange: { min: 30000, max: 100000 },
     rating: 5,
     description: "A luxury wellness retreat combining Ayurveda, Yoga, and holistic healing in Himalayan foothills.",
     images: ["https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800"],
     amenities: ["Spa Pavilion", "Yoga Pavilion", "Ayurveda", "Meditation", "Organic Cuisine", "Palace Suites"],
-    startingPrice: 35000,
 
     address: {
       street: "Narendra Nagar",
@@ -772,20 +719,16 @@ export const indianPartners = [
       { name: "Rajaji National Park", images: [], description: "Wildlife sanctuary", entryFee: 200 }
     ]
   },
-
   {
     email: "suryagarh.jaisalmer@example.com",
     password: "partner123",
     companyName: "Suryagarh Jaisalmer",
-    destinations: "Jaisalmer",
     type: "Hotel",
     specializations: ["Desert", "Heritage", "Luxury"],
-    budgetRange: { min: 18000, max: 60000 },
     rating: 5,
     description: "A luxurious desert fort-palace offering authentic Rajasthani experiences.",
     images: ["https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800"],
     amenities: ["Desert Safaris", "Spa", "Dune Dining", "Cultural Shows", "Heritage Tours", "Pool"],
-    startingPrice: 22000,
 
     address: {
       street: "Sam Road",
@@ -822,20 +765,16 @@ export const indianPartners = [
       { name: "Kuldhara Village", images: [], description: "Abandoned village", entryFee: 50 }
     ]
   },
-
   {
     email: "taj.lake.palace.udaipur@example.com",
     password: "partner123",
     companyName: "Taj Lake Palace Udaipur",
-    destinations: "Udaipur",
     type: "Hotel",
     specializations: ["Iconic", "Luxury", "Romantic"],
-    budgetRange: { min: 40000, max: 150000 },
     rating: 5,
     description: "Iconic marble palace floating on Lake Pichola offering unmatched romantic luxury.",
     images: ["https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800"],
     amenities: ["Lake Palace Suites", "Jiva Spa", "Boat Transfers", "Rooftop Dining", "Butler Service"],
-    startingPrice: 48000,
 
     address: {
       street: "Lake Pichola",
@@ -880,10 +819,8 @@ export const internationalPartners = [
     email: "soneva.jani.maldives@example.com",
     password: "partner123",
     companyName: "Soneva Jani",
-    destinations: "Maldives",
     type: "Hotel",
     specializations: ["Luxury", "Honeymoon", "Wellness"],
-    budgetRange: { min: 150000, max: 1000000 },
     rating: 5,
     description: "A benchmark for overwater luxury with private villas, pools, and retractable roofs for stargazing.",
     images: [
@@ -891,7 +828,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Private Pool", "Retractable Roof", "Water Slide", "Cinema Paradiso", "Observatory", "Organic Gardens"],
-    startingPrice: 250000,
 
     address: {
       street: "Noonu Atoll",
@@ -925,15 +861,12 @@ export const internationalPartners = [
       { name: "Private Sandbank", images: [], description: "Isolated island experience", entryFee: 20000 }
     ]
   },
-
   {
     email: "gili.lankanfushi@example.com",
     password: "partner123",
     companyName: "Gili Lankanfushi",
-    destinations: "Maldives",
     type: "Hotel",
     specializations: ["Eco-Luxury", "Honeymoon"],
-    budgetRange: { min: 100000, max: 500000 },
     rating: 5,
     description: "An intimate coral island resort offering privacy, eco-luxury, and overwater villas.",
     images: [
@@ -941,7 +874,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Overwater Bar", "Meera Spa", "Jungle Cinema", "Wine Cellar", "Butler Service"],
-    startingPrice: 120000,
 
     address: {
       street: "North Malé Atoll",
@@ -980,10 +912,8 @@ export const internationalPartners = [
     email: "velaa.private.island@example.com",
     password: "partner123",
     companyName: "Velaa Private Island",
-    destinations: "Maldives",
     type: "Hotel",
     specializations: ["Ultra-Luxury", "Privacy"],
-    budgetRange: { min: 300000, max: 1500000 },
     rating: 5,
     description: "Ultra-exclusive boutique island offering unmatched privacy and luxury experiences.",
     images: [
@@ -991,7 +921,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Golf Academy", "Snow Room", "Clarins Spa", "Private Submarine", "Kids Club"],
-    startingPrice: 350000,
 
     address: {
       street: "Noonu Atoll",
@@ -1030,10 +959,8 @@ export const internationalPartners = [
     email: "oneonly.reethi.rah@example.com",
     password: "partner123",
     companyName: "One&Only Reethi Rah",
-    destinations: "Maldives",
     type: "Hotel",
     specializations: ["Family", "Luxury"],
-    budgetRange: { min: 200000, max: 800000 },
     rating: 4,
     description: "A luxurious island resort ideal for families, offering beaches, activities, and premium hospitality.",
     images: [
@@ -1041,7 +968,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1586611292717-f828b167408c?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Private Beaches", "Kids Club", "Spa", "Climbing Wall", "Football Pitch"],
-    startingPrice: 220000,
 
     address: {
       street: "North Malé Atoll",
@@ -1081,10 +1007,8 @@ export const internationalPartners = [
     email: "four.seasons.george.v.paris@example.com",
     password: "partner123",
     companyName: "Four Seasons Hotel George V",
-    destinations: "Paris",
     type: "Hotel",
     specializations: ["Luxury", "City", "Gastronomy"],
-    budgetRange: { min: 150000, max: 600000 },
     rating: 5,
     description: "An iconic art deco luxury hotel in Paris known for Michelin-starred dining and exceptional service.",
     images: [
@@ -1092,7 +1016,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Michelin Dining", "Luxury Spa", "Floral Design", "Indoor Pool", "Concierge"],
-    startingPrice: 180000,
 
     address: {
       street: "31 Avenue George V",
@@ -1131,10 +1054,8 @@ export const internationalPartners = [
     email: "ritz.paris@example.com",
     password: "partner123",
     companyName: "The Ritz Paris",
-    destinations: "Paris",
     type: "Hotel",
     specializations: ["History", "Luxury"],
-    budgetRange: { min: 200000, max: 700000 },
     rating: 5,
     description: "A legendary luxury hotel overlooking Place Vendôme, known for its rich history and timeless elegance.",
     images: [
@@ -1142,7 +1063,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Hemingway Bar", "Luxury Spa", "Cooking School", "Private Garden"],
-    startingPrice: 210000,
 
     address: {
       street: "15 Place Vendôme",
@@ -1181,10 +1101,8 @@ export const internationalPartners = [
     email: "lemeurice.paris@example.com",
     password: "partner123",
     companyName: "Le Meurice",
-    destinations: "Paris",
     type: "Hotel",
     specializations: ["Art", "Luxury"],
-    budgetRange: { min: 120000, max: 500000 },
     rating: 4,
     description: "A historic luxury hotel blending art, elegance, and Parisian charm near the Louvre.",
     images: [
@@ -1192,7 +1110,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1550355291-bbee04a92027?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Spa", "Fine Dining", "Pastry Shop", "Pet Friendly", "Fitness Center"],
-    startingPrice: 140000,
 
     address: {
       street: "228 Rue de Rivoli",
@@ -1232,10 +1149,8 @@ export const internationalPartners = [
     email: "viceroy.bali@example.com",
     password: "partner123",
     companyName: "Viceroy Bali",
-    destinations: "Bali",
     type: "Hotel",
     specializations: ["Jungle", "Honeymoon", "Wellness"],
-    budgetRange: { min: 40000, max: 200000 },
     rating: 5,
     description: "Luxury jungle resort in Ubud offering private pool villas and serene valley views.",
     images: [
@@ -1243,7 +1158,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1573790387438-4da905039392?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Infinity Pool", "Spa", "Fine Dining", "Helipad", "Yoga Pavilion"],
-    startingPrice: 55000,
 
     address: {
       street: "Ubud",
@@ -1282,10 +1196,8 @@ export const internationalPartners = [
     email: "mandapa.ritz.reserve@example.com",
     password: "partner123",
     companyName: "Mandapa, a Ritz-Carlton Reserve",
-    destinations: "Bali",
     type: "Hotel",
     specializations: ["Culture", "Luxury", "Nature"],
-    budgetRange: { min: 80000, max: 300000 },
     rating: 5,
     description: "Riverfront luxury retreat in Ubud offering wellness and cultural immersion.",
     images: [
@@ -1293,7 +1205,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Riverfront Dining", "Spa", "Organic Farm", "Butler Service"],
-    startingPrice: 90000,
 
     address: {
       street: "Ubud",
@@ -1332,10 +1243,8 @@ export const internationalPartners = [
     email: "burj.al.arab@example.com",
     password: "partner123",
     companyName: "Burj Al Arab Jumeirah",
-    destinations: "Dubai",
     type: "Hotel",
     specializations: ["Ultra-Luxury", "Iconic"],
-    budgetRange: { min: 150000, max: 1000000 },
     rating: 5,
     description: "Iconic sail-shaped hotel symbolizing ultra-luxury in Dubai.",
     images: [
@@ -1343,7 +1252,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1512453979798-5ea9ba6a80f6?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Helipad", "Spa", "Private Beach", "Luxury Dining", "Rolls Royce Transfers"],
-    startingPrice: 180000,
 
     address: {
       street: "Jumeirah Beach Road",
@@ -1382,10 +1290,8 @@ export const internationalPartners = [
     email: "badrutts.palace@example.com",
     password: "partner123",
     companyName: "Badrutt's Palace Hotel",
-    destinations: "St. Moritz",
     type: "Hotel",
     specializations: ["Alpine", "Luxury", "Winter"],
-    budgetRange: { min: 80000, max: 400000 },
     rating: 5,
     description: "Historic luxury alpine hotel with stunning views of the Swiss Alps.",
     images: [
@@ -1393,7 +1299,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1483095348487-53dbf97d8d5b?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Spa", "Ski School", "Ice Rink", "Luxury Dining"],
-    startingPrice: 95000,
 
     address: {
       street: "Via Serlas",
@@ -1426,14 +1331,12 @@ export const internationalPartners = [
     ]
   },
 
-      {
+  {
     email: "aman.tokyo@example.com",
     password: "partner123",
     companyName: "Aman Tokyo",
-    destinations: "Tokyo",
     type: "Hotel",
     specializations: ["Urban", "Zen"],
-    budgetRange: { min: 120000, max: 400000 },
     rating: 5,
     description: "An urban sanctuary blending traditional Japanese minimalism with modern luxury in the heart of Tokyo.",
     images: [
@@ -1441,7 +1344,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1493997181344-712f2f19dcf1?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Aman Spa", "Wine Cellar", "Cigar Lounge", "Library", "Indoor Pool"],
-    startingPrice: 130000,
 
     address: {
       street: "Otemachi Tower",
@@ -1480,10 +1382,8 @@ export const internationalPartners = [
     email: "marina.bay.sands@example.com",
     password: "partner123",
     companyName: "Marina Bay Sands",
-    destinations: "Singapore",
     type: "Hotel",
     specializations: ["Iconic", "City"],
-    budgetRange: { min: 40000, max: 200000 },
     rating: 4,
     description: "An iconic integrated resort featuring the world-famous infinity pool and skyline views.",
     images: [
@@ -1491,7 +1391,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Infinity Pool", "SkyPark", "Casino", "Museum", "Shopping Mall"],
-    startingPrice: 50000,
 
     address: {
       street: "10 Bayfront Avenue",
@@ -1530,10 +1429,8 @@ export const internationalPartners = [
     email: "grace.hotel.santorini@example.com",
     password: "partner123",
     companyName: "Grace Hotel, Auberge Resorts Collection",
-    destinations: "Santorini",
     type: "Hotel",
     specializations: ["Romance", "Views"],
-    budgetRange: { min: 80000, max: 300000 },
     rating: 4.9,
     description: "A romantic cliffside retreat offering stunning caldera views and unforgettable sunsets.",
     images: [
@@ -1541,7 +1438,6 @@ export const internationalPartners = [
       "https://images.unsplash.com/photo-1602343168117-bb8ffe3e2e9f?q=80&w=1000&auto=format&fit=crop"
     ],
     amenities: ["Infinity Pool", "Champagne Lounge", "Yoga", "In-room Dining", "Concierge"],
-    startingPrice: 90000,
 
     address: {
       street: "Imerovigli",
@@ -1575,54 +1471,4 @@ export const internationalPartners = [
       { name: "Ancient Thera", images: [], description: "Historic ruins", entryFee: 500 }
     ]
   },
-
-  {
-    email: "four.seasons.bora.bora@example.com",
-    password: "partner123",
-    companyName: "Four Seasons Resort Bora Bora",
-    destinations: "Bora Bora",
-    type: "Hotel",
-    specializations: ["Tropical", "Honeymoon"],
-    budgetRange: { min: 150000, max: 600000 },
-    rating: 5,
-    description: "A luxury island resort offering overwater bungalows and breathtaking lagoon views.",
-    images: [
-      "https://images.unsplash.com/photo-1537905569824-f89f14cceb68?q=80&w=1000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?q=80&w=1000&auto=format&fit=crop"
-    ],
-    amenities: ["Overwater Villas", "Lagoon", "Spa", "Tennis Court", "Kids Club"],
-    startingPrice: 170000,
-
-    address: {
-      street: "Motu Tehotu",
-      city: "Bora Bora",
-      pinCode: "98730",
-      country: "French Polynesia"
-    },
-    starRating: 5,
-    roomTypes: [
-      { name: "Beach Villa", price: 170000 },
-      { name: "Overwater Bungalow", price: 350000 },
-      { name: "Presidential Villa", price: 600000 }
-    ],
-    contactInfo: {
-      phone: "+689-40-603170",
-      website: "www.fourseasons.com",
-      email: "borabora@fourseasons.com",
-      facebook: "https://www.facebook.com/FourSeasonsBoraBora",
-      instagram: "https://www.instagram.com/fourseasons"
-    },
-    activities: [
-      { name: "Snorkeling", category: "Adventure", duration: "2 hours", price: 5000, description: "Explore coral reefs" },
-      { name: "Spa Therapy", category: "Wellness", duration: "2 hours", price: 8000, description: "Tropical spa treatments" },
-      { name: "Lagoon Tour", category: "Experience", duration: "3 hours", price: 7000, description: "Boat tour of lagoon" }
-    ],
-    checkIn: "3:00 PM",
-    checkOut: "12:00 PM",
-    sightSeeings: [
-      { name: "Mount Otemanu", images: [], description: "Volcanic peak", entryFee: 0 },
-      { name: "Matira Beach", images: [], description: "Famous beach", entryFee: 0 },
-      { name: "Coral Gardens", images: [], description: "Snorkeling site", entryFee: 0 }
-    ]
-  }
 ];

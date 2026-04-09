@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { FaFilter, FaSearch, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave, FaCopy, FaLink, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import HotelSelectionModal from '../../components/agent/HotelSelectionModal';
 
 const RequirementDetails: React.FC = () => {
     const { id } = useParams();
@@ -11,10 +12,11 @@ const RequirementDetails: React.FC = () => {
     const { user } = useAuth();
     const [requirement, setRequirement] = useState<any>(null);
     const [partners, setPartners] = useState<any[]>([]);
-    const [selectedPartners, setSelectedPartners] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [viewingPartner, setViewingPartner] = useState<any>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedPartner, setSelectedPartner] = useState<any>(null);
     const [compareUrl, setCompareUrl] = useState<string | null>(null);
     const [generatingCompareLink, setGeneratingCompareLink] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -89,28 +91,35 @@ const RequirementDetails: React.FC = () => {
         fetchPartners(filters, config);
     };
 
-    const togglePartner = (partnerId: string) => {
-        setSelectedPartners(prev =>
-            prev.includes(partnerId)
-                ? prev.filter(id => id !== partnerId)
-                : [...prev, partnerId].slice(0, 3) // Max 3
-        );
+    // Open modal for partner selection
+    const openPartnerModal = (partner: any) => {
+        setSelectedPartner(partner);
+        setModalOpen(true);
     };
 
-    const handleGenerateQuotes = async () => {
-        if (selectedPartners.length === 0) return;
+    // Handle quote generation from modal
+    const handleGenerateQuote = async (selection: {
+        partnerId: string;
+        roomTypeName: string;
+        activities: string[];
+        sightSeeings: string[];
+    }) => {
         setGenerating(true);
         try {
             const config = { headers: { Authorization: `Bearer ${user?.token}` } };
             await axios.post(`${import.meta.env.VITE_API_URL}/api/quotes/generate`, {
                 requirementId: id,
-                partnerIds: selectedPartners,
+                partnerId: selection.partnerId,
+                roomTypeName: selection.roomTypeName,
+                activities: selection.activities,
+                sightSeeings: selection.sightSeeings,
             }, config);
 
+            setModalOpen(false);
             navigate('/agent/quotes');
         } catch (error) {
-            console.error('Error generating quotes:', error);
-            alert('Failed to generate quotes');
+            console.error('Error generating quote:', error);
+            alert('Failed to generate quote');
         } finally {
             setGenerating(false);
         }
@@ -277,21 +286,8 @@ const RequirementDetails: React.FC = () => {
                     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                         <div>
                             <h2 className="text-2xl font-serif font-bold text-white mb-2">Match Partners</h2>
-                            <p className="text-gray-400">Select up to 3 partners to generate quotes</p>
+                            <p className="text-gray-400">Click "Select" on a partner to customize and generate quote</p>
                         </div>
-                        <button
-                            onClick={handleGenerateQuotes}
-                            disabled={selectedPartners.length === 0 || generating}
-                            className="w-full md:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold px-8 py-4 rounded-xl hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-2"
-                        >
-                            {generating ? (
-                                <>
-                                    <FaSpinner className="animate-spin" /> Generating...
-                                </>
-                            ) : (
-                                `Generate Quotes (${selectedPartners.length})`
-                            )}
-                        </button>
                     </div>
 
                     {/* Filter Bar - Fixed Overlapping Stars */}
@@ -405,10 +401,7 @@ const RequirementDetails: React.FC = () => {
                         {partners.map(partner => (
                             <div
                                 key={partner._id}
-                                className={`group relative bg-black/40 border rounded-2xl overflow-hidden transition-all duration-300 ${selectedPartners.includes(partner.userId)
-                                        ? 'border-emerald-500 ring-2 ring-emerald-500/50 shadow-2xl shadow-emerald-500/10'
-                                        : 'border-white/10 hover:border-white/30 hover:shadow-xl hover:-translate-y-1'
-                                    }`}
+                                className="group relative bg-black/40 border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/30 hover:shadow-xl hover:-translate-y-1"
                             >
                                 {/* Image */}
                                 <div className="h-56 overflow-hidden relative">
@@ -423,11 +416,6 @@ const RequirementDetails: React.FC = () => {
                                         <FaStar /> {partner.rating}
                                     </div>
 
-                                    {selectedPartners.includes(partner.userId) && (
-                                        <div className="absolute top-3 left-3 bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow-lg">
-                                            <FaCheckCircle /> Selected
-                                        </div>
-                                    )}
 
                                     <div className="absolute bottom-4 left-4 right-4">
                                         <h3 className="text-xl font-serif font-bold text-white mb-1">{partner.companyName}</h3>
@@ -462,13 +450,10 @@ const RequirementDetails: React.FC = () => {
                                                 <FaEye />
                                             </button>
                                             <button
-                                                onClick={() => togglePartner(partner.userId)}
-                                                className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${selectedPartners.includes(partner.userId)
-                                                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/50'
-                                                        : 'bg-white text-black hover:bg-gray-200 shadow-lg shadow-white/10'
-                                                    }`}
+                                                onClick={() => openPartnerModal(partner)}
+                                                className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20"
                                             >
-                                                {selectedPartners.includes(partner.userId) ? 'Remove' : 'Select'}
+                                                Select
                                             </button>
                                         </div>
                                     </div>
@@ -523,11 +508,7 @@ const RequirementDetails: React.FC = () => {
                                     <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-2">{viewingPartner.companyName}</h2>
                                     <div className="flex items-center gap-4 text-sm">
                                         <p className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                                            <FaMapMarkerAlt /> {
-                                                Array.isArray(viewingPartner.destinations) 
-                                                ? viewingPartner.destinations.join(', ') 
-                                                : (viewingPartner.destinations || viewingPartner.address?.city || 'Location not specified')
-                                            }
+                                            <FaMapMarkerAlt /> {viewingPartner.address?.city || 'Location not specified'}
                                         </p>
                                         <p className="text-yellow-400 flex items-center gap-1 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20">
                                             <FaStar /> {viewingPartner.rating} Rating
@@ -578,20 +559,17 @@ const RequirementDetails: React.FC = () => {
 
                                 <div className="space-y-6">
                                     <div className="bg-zinc-800/50 p-6 rounded-2xl border border-white/10 sticky top-6">
-                                        <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Starting Price</p>
-                                        <p className="text-4xl font-bold text-emerald-400 mb-6">₹{viewingPartner.startingPrice ? viewingPartner.startingPrice.toLocaleString() : 'N/A'}</p>
+                                        <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider">Room Types Available</p>
+                                        <p className="text-4xl font-bold text-emerald-400 mb-6">{viewingPartner.roomTypes?.length || 0} Options</p>
 
                                         <button
                                             onClick={() => {
-                                                togglePartner(viewingPartner.userId);
+                                                openPartnerModal(viewingPartner);
                                                 setViewingPartner(null);
                                             }}
-                                            className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg ${selectedPartners.includes(viewingPartner.userId)
-                                                    ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/50'
-                                                    : 'bg-white text-black hover:bg-emerald-400 hover:text-black hover:shadow-emerald-500/20'
-                                                }`}
+                                            className="w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-emerald-500/20"
                                         >
-                                            {selectedPartners.includes(viewingPartner.userId) ? 'Remove Selection' : 'Select Partner'}
+                                            Select Partner
                                         </button>
                                     </div>
 
@@ -611,6 +589,16 @@ const RequirementDetails: React.FC = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Hotel Selection Modal */}
+            <HotelSelectionModal
+                partner={selectedPartner}
+                requirement={requirement}
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onGenerateQuote={handleGenerateQuote}
+                isGenerating={generating}
+            />
         </div>
     );
 };

@@ -13,15 +13,15 @@ mongoose.connect(MONGO_URI)
 
 const seedPartners = async () => {
     try {
-        // Clear existing international partners
-        const intlDestinations = ["Maldives", "Paris", "France", "Bali", "Indonesia", "Dubai", "UAE", "St. Moritz", "Switzerland", "Zurich", "Lucerne", "Tokyo", "Japan", "Singapore", "Santorini", "Greece", "Bora Bora", "French Polynesia"];
+        // Clear existing international partners by city names
+        const intlCities = ["Maldives", "Paris", "Bali", "Dubai", "Zurich", "Lucerne", "Tokyo", "Singapore", "Santorini", "Bora Bora"];
         
-        // Get existing partner profiles for international destinations
-        const existingProfiles = await PartnerProfile.find({ destinations: { $in: intlDestinations } });
+        // Get existing partner profiles for international cities
+        const existingProfiles = await PartnerProfile.find({ 'address.city': { $in: intlCities } });
         const userIdsToDelete = existingProfiles.map(p => p.userId);
         
         // Delete partner profiles
-        await PartnerProfile.deleteMany({ destinations: { $in: intlDestinations } });
+        await PartnerProfile.deleteMany({ 'address.city': { $in: intlCities } });
         
         // Delete corresponding users
         if (userIdsToDelete.length > 0) {

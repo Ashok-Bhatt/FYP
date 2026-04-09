@@ -110,20 +110,14 @@ export interface PartnerProfile {
     _id?: string;
     userId: string;
     companyName: string;
-    destinations?: string;
     type: 'DMC' | 'Hotel' | 'Mixed';
     specializations?: string[];
-    budgetRange?: {
-        min?: number;
-        max?: number;
-    };
     rating?: number;
     tripsHandled?: number;
     description: string;
     description_embedding?: number[];
     images?: string[];
     amenities?: string[];
-    startingPrice?: number;
     reviews?: number;
     address?: {
         street: string;

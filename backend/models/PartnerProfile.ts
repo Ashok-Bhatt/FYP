@@ -10,11 +10,6 @@ export interface IPartnerProfile extends Omit<SharedPartnerProfile, '_id' | 'use
 
     specializations?: string[];
 
-    budgetRange?: {
-        min?: number;
-        max?: number;
-    };
-
     rating?: number;
     tripsHandled?: number;
 
@@ -23,8 +18,6 @@ export interface IPartnerProfile extends Omit<SharedPartnerProfile, '_id' | 'use
     images?: string[];
 
     amenities?: string[];
-
-    startingPrice?: number;
 
     reviews?: number;
 
@@ -81,20 +74,12 @@ const partnerProfileSchema = new Schema<IPartnerProfile>({
         type: String,
         required: true,
     },
-    destinations: {
-        type: String,
-        default: '',
-    },
     type: {
         type: String,
         enum: ['DMC', 'Hotel', 'Mixed'],
         default: 'Hotel',
     },
     specializations: [String],
-    budgetRange: {
-        min: Number,
-        max: Number,
-    },
     rating: {
         type: Number,
         default: 4.5,
@@ -109,7 +94,6 @@ const partnerProfileSchema = new Schema<IPartnerProfile>({
     },
     images: [String],
     amenities: [String],
-    startingPrice: Number,
     reviews: {
         type: Number,
         default: 0,

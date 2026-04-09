@@ -13,9 +13,9 @@ mongoose.connect(MONGO_URI)
 
 const seedIndianPartners = async () => {
     try {
-        // Clear existing Indian partners
-        const indianDestinations = ["Delhi", "Udaipur", "Mumbai", "Bangalore", "Shimla", "Jaipur", "Goa", "Ranthambore", "Chennai", "Srinagar", "Hyderabad", "Kumarakom", "Coorg", "Rishikesh", "Jaisalmer"];
-        await PartnerProfile.deleteMany({ destinations: { $in: indianDestinations } });
+        // Clear existing Indian partners by city
+        const indianCities = ["New Delhi", "Udaipur", "Mumbai", "Bangalore", "Shimla", "Jaipur", "Goa", "Ranthambore", "Chennai", "Srinagar", "Hyderabad", "Kumarakom", "Coorg", "Rishikesh", "Jaisalmer"];
+        await PartnerProfile.deleteMany({ 'address.city': { $in: indianCities } });
         console.log('Cleared existing Indian partners');
 
         // Fetch bulk embeddings for all descriptions
