@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { FaFilter, FaSearch, FaCheckCircle, FaSpinner, FaMapMarkerAlt, FaStar, FaEye, FaTimes, FaCalendarAlt, FaUserFriends, FaMoneyBillWave, FaCopy, FaLink, FaCheck } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import HotelSelectionModal from '../../components/agent/HotelSelectionModal';
+import QuotationBuilderModal from '../../components/agent/QuotationBuilderModal';
 
 const RequirementDetails: React.FC = () => {
     const { id } = useParams();
@@ -103,6 +103,16 @@ const RequirementDetails: React.FC = () => {
         roomTypeName: string;
         activities: string[];
         sightSeeings: string[];
+        flight?: {
+            airline: string;
+            flightNumber: string;
+            departure: { airport: string; iata: string; time: string; date: string };
+            arrival: { airport: string; iata: string; time: string; date: string };
+            duration: string;
+            class: string;
+            baggage: string;
+            price: number;
+        };
     }) => {
         setGenerating(true);
         try {
@@ -113,6 +123,7 @@ const RequirementDetails: React.FC = () => {
                 roomTypeName: selection.roomTypeName,
                 activities: selection.activities,
                 sightSeeings: selection.sightSeeings,
+                flight: selection.flight,
             }, config);
 
             setModalOpen(false);
@@ -590,8 +601,8 @@ const RequirementDetails: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Hotel Selection Modal */}
-            <HotelSelectionModal
+            {/* Quotation Builder Modal */}
+            <QuotationBuilderModal
                 partner={selectedPartner}
                 requirement={requirement}
                 isOpen={modalOpen}

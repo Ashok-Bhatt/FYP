@@ -23,24 +23,37 @@ const dateInputRef = useRef<HTMLInputElement>(null);
         hotelStar: 4,
         preferences: [] as string[],
         description: '',
+        transport: { required: false, from: '' },
         contactInfo: { name: '', email: '', phone: '', whatsapp: '' }
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        
+        // Convert number inputs to actual numbers
+        const processedValue = type === 'number' ? parseInt(value) || 0 : value;
+        
         if (name.includes('.')) {
             const [parent, child] = name.split('.');
             setFormData(prev => ({
                 ...prev,
-                [parent]: { ...(prev as any)[parent], [child]: value }
+                [parent]: { ...(prev as any)[parent], [child]: processedValue }
             }));
         } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
+            setFormData(prev => ({ ...prev, [name]: processedValue }));
         }
     };
 
     const handleStarClick = (rating: number) => {
         setFormData(prev => ({ ...prev, hotelStar: rating }));
+    };
+
+    const handleTransportChange = (required: boolean) => {
+        setFormData(prev => ({ ...prev, transport: { ...prev.transport, required } }));
+    };
+
+    const handleTransportFromChange = (from: string) => {
+        setFormData(prev => ({ ...prev, transport: { ...prev.transport, from } }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -221,6 +234,48 @@ const dateInputRef = useRef<HTMLInputElement>(null);
                                     />
                                 </div>
                             </div>
+
+                            {/* Transport Option */}
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-400 mb-3">Need Traveling Facility?</label>
+                                <div className="flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleTransportChange(true)}
+                                        className={`flex-1 py-3 rounded-xl border transition-all ${formData.transport.required
+                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                            : 'bg-black/50 border-white/10 text-gray-400 hover:border-white/30'
+                                            }`}
+                                    >
+                                        <span className="font-medium">Yes, Include Flights</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleTransportChange(false)}
+                                        className={`flex-1 py-3 rounded-xl border transition-all ${!formData.transport.required
+                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                            : 'bg-black/50 border-white/10 text-gray-400 hover:border-white/30'
+                                            }`}
+                                    >
+                                        <span className="font-medium">No, I'll Arrange My Own</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* From Location (shown when transport is required) */}
+                            {formData.transport.required && (
+                                <div className="col-span-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Traveling From (City)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.transport.from}
+                                        onChange={(e) => handleTransportFromChange(e.target.value)}
+                                        placeholder="e.g., Mumbai, Delhi, Bangalore"
+                                        className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                                        required={formData.transport.required}
+                                    />
+                                </div>
+                            )}
 
                             {/* Description / Smart Query */}
                             <div className="col-span-2">
