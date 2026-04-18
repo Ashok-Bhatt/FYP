@@ -2,7 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHotel, FaPlane, FaTicketAlt, FaCheckCircle, FaTimesCircle, FaSpinner } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaUser, FaHotel, FaPlane, FaTicketAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaMoon, FaCity, FaBed, FaClock, FaFilePdf } from 'react-icons/fa';
+import ItineraryTimeline from '../components/ItineraryTimeline';
+import { generateItineraryPDF } from '../utils/generatePDF';
 
 const PublicQuoteView: React.FC = () => {
     const { token } = useParams();
@@ -10,6 +12,7 @@ const PublicQuoteView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const sectionDurations = useRef<Record<string, number>>({});
     const activeSection = useRef<string | null>(null);
 
@@ -36,6 +39,33 @@ const PublicQuoteView: React.FC = () => {
             alert('Failed to update quote status. Please try again.');
         } finally {
             setActionLoading(false);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!quote.itinerary || quote.itinerary.length === 0) {
+            alert('No itinerary available for this quote to generate a PDF.');
+            return;
+        }
+        setDownloadingPdf(true);
+        try {
+            const requirement = quote.requirementId;
+            await generateItineraryPDF({
+                destination: requirement.destination || 'Trip',
+                duration: requirement.duration || quote.itinerary.length,
+                tripType: requirement.tripType || 'Leisure',
+                clientName: requirement.contactInfo?.name || 'Valued Traveler',
+                hotel: quote.sections?.hotels?.[0]?.name || 'Your Hotel',
+                finalCost: quote.costs?.final || 0,
+                itinerary: quote.itinerary,
+                pexelsKey: import.meta.env.VITE_PEXELS_API_KEY as string,
+                apiBaseUrl: import.meta.env.VITE_API_URL as string,
+            });
+        } catch (err) {
+            console.error('PDF generation error:', err);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setDownloadingPdf(false);
         }
     };
 
@@ -198,13 +228,19 @@ const PublicQuoteView: React.FC = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {quote.sections.hotels.map((h: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                                        <div key={i} className="group flex flex-col sm:flex-row justify-between sm:items-center gap-4 border border-white/5 bg-black/40 p-4 rounded-xl hover:border-emerald-500/30 transition-all">
                                             <div>
-                                                <h4 className="font-bold text-lg text-white">{h.name}</h4>
-                                                <p className="text-sm text-gray-400">{h.city} • {h.roomType}</p>
+                                                <h4 className="font-bold text-lg text-white flex items-center gap-2">
+                                                    {h.name}
+                                                </h4>
+                                                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-400">
+                                                    <span className="flex items-center gap-1.5"><FaCity className="text-emerald-500/70 text-xs" /> {h.city}</span>
+                                                    <span className="flex items-center gap-1.5"><FaBed className="text-emerald-500/70 text-xs" /> {h.roomType}</span>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-medium text-emerald-400">{h.nights} Nights</p>
+                                            <div className="flex items-center gap-2 sm:justify-end sm:text-right bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-500/20 w-fit">
+                                                <FaMoon className="text-emerald-400" />
+                                                <span className="font-bold text-emerald-400">{h.nights} Nights</span>
                                             </div>
                                         </div>
                                     ))}
@@ -227,12 +263,19 @@ const PublicQuoteView: React.FC = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {quote.sections.transport.map((t: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                                            <div>
-                                                <h4 className="font-bold text-lg text-white">{t.type}</h4>
+                                        <div key={i} className="flex justify-between items-center border border-white/5 bg-black/40 p-4 rounded-xl hover:border-blue-500/30 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex justify-center items-center text-blue-400">
+                                                    <FaPlane className="text-xl" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-lg text-white">{t.type}</h4>
+                                                    <p className="text-xs tracking-wider text-gray-500 uppercase mt-1">Transfer service</p>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-medium text-emerald-400">{t.days} Days</p>
+                                            <div className="flex items-center gap-2 text-right bg-blue-500/10 px-4 py-2 rounded-lg border border-blue-500/20">
+                                                <FaClock className="text-blue-400 text-sm" />
+                                                <span className="font-bold text-blue-400">{t.days} Days</span>
                                             </div>
                                         </div>
                                     ))}
@@ -255,13 +298,37 @@ const PublicQuoteView: React.FC = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     {quote.sections.activities.map((a: any, i: number) => (
-                                        <div key={i} className="flex justify-between items-center border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                                            <div>
-                                                <h4 className="font-bold text-lg text-white">{a.name}</h4>
+                                        <div key={i} className="flex justify-between items-center border border-white/5 bg-black/40 p-4 rounded-xl hover:border-purple-500/30 transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-full bg-purple-500/10 flex flex-col justify-center items-center text-purple-400">
+                                                    <span className="text-xs font-bold">ACT</span>
+                                                    <span className="text-[10px] opacity-80">{i + 1}</span>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-lg text-white">{a.name}</h4>
+                                                    <p className="text-xs tracking-wider text-gray-500 uppercase mt-1">Included</p>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+                            </motion.div>
+                        )}
+
+                        {/* AI Itinerary Section */}
+                        {quote.itinerary && quote.itinerary.length > 0 && (
+                            <motion.div 
+                                id="itinerary"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="pt-8 border-t border-white/10"
+                            >
+                                <ItineraryTimeline 
+                                    days={quote.itinerary} 
+                                    destination={requirement.destination}
+                                    pexelsKey={import.meta.env.VITE_PEXELS_API_KEY}
+                                />
                             </motion.div>
                         )}
                     </div>
@@ -316,6 +383,19 @@ const PublicQuoteView: React.FC = () => {
                             {(quote.status === 'ACCEPTED' || quote.status === 'DECLINED') && (
                                 <div className="mt-6 text-center text-sm text-gray-500">
                                     This quote can no longer be modified. Please contact your travel agent for further assistance.
+                                </div>
+                            )}
+
+                            {quote.itinerary && quote.itinerary.length > 0 && (
+                                <div className="space-y-3 mt-6 border-t border-white/10 pt-6">
+                                    <button
+                                        onClick={handleDownloadPdf}
+                                        disabled={downloadingPdf}
+                                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {downloadingPdf ? <FaSpinner className="animate-spin" /> : <FaFilePdf className="text-red-400" />}
+                                        Download Proposal PDF
+                                    </button>
                                 </div>
                             )}
                         </motion.div>

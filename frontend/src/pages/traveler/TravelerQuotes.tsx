@@ -8,7 +8,7 @@ import {
     FaMapMarkerAlt, FaUsers, FaCalendarAlt, FaMoneyBillWave, 
     FaStar, FaEye, FaShare, FaDownload, FaExternalLinkAlt, FaChevronDown
 } from 'react-icons/fa';
-import { generateQuotePDF } from '../../utils/quotePdfUtils';
+import { generateItineraryPDF } from '../../utils/generatePDF';
 
 const TravelerQuotes: React.FC = () => {
     const { user } = useAuth();
@@ -19,6 +19,7 @@ const TravelerQuotes: React.FC = () => {
     const [requirements, setRequirements] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedRequirement, setSelectedRequirement] = useState<string>('');
+    const [downloadingQuoteId, setDownloadingQuoteId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchRequirements();
@@ -88,6 +89,32 @@ const TravelerQuotes: React.FC = () => {
         
         const output = status.toLowerCase().replace(/_/g, ' ');
         return output.charAt(0).toUpperCase() + output.slice(1);
+    };
+
+    const handleDownloadPdf = async (quote: any) => {
+        if (!quote.itinerary || quote.itinerary.length === 0) {
+            alert('No itinerary available for this quote to generate a PDF.');
+            return;
+        }
+        setDownloadingQuoteId(quote._id);
+        try {
+            await generateItineraryPDF({
+                destination: quote.requirementId?.destination || 'Trip',
+                duration: quote.requirementId?.duration || quote.itinerary.length,
+                tripType: quote.requirementId?.tripType || 'Leisure',
+                clientName: user?.name || quote.requirementId?.contactInfo?.name || 'Valued Traveler',
+                hotel: quote.sections?.hotels?.[0]?.name || 'Your Hotel',
+                finalCost: quote.costs?.final || 0,
+                itinerary: quote.itinerary,
+                pexelsKey: import.meta.env.VITE_PEXELS_API_KEY as string,
+                apiBaseUrl: import.meta.env.VITE_API_URL as string,
+            });
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setDownloadingQuoteId(null);
+        }
     };
 
     if (loading) {
@@ -282,10 +309,11 @@ const TravelerQuotes: React.FC = () => {
                                                     Share
                                                 </button> */}
                                                 <button 
-                                                    onClick={() => generateQuotePDF(quote)}
-                                                    className="px-4 py-2 bg-zinc-800 text-gray-300 font-medium rounded-lg hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                                                    onClick={() => handleDownloadPdf(quote)}
+                                                    disabled={downloadingQuoteId === quote._id}
+                                                    className="px-4 py-2 bg-zinc-800 text-gray-300 font-medium rounded-lg hover:bg-zinc-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                                                 >
-                                                    <FaDownload size={14} />
+                                                    {downloadingQuoteId === quote._id ? <FaSpinner className="animate-spin" /> : <FaDownload size={14} />}
                                                     Download PDF
                                                 </button>
                                             </div>

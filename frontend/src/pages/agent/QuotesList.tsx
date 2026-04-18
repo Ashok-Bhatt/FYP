@@ -7,6 +7,7 @@ import QuoteCard from '../../components/agent/QuoteCard';
 import EmptyState from '../../components/agent/EmptyState';
 import LoadingState from '../../components/agent/LoadingState';
 import { toast } from 'react-hot-toast';
+import { generateQuotePDF } from '../../utils/quotePdfUtils';
 
 const QuotesList: React.FC = () => {
     const { user } = useAuth();
@@ -140,6 +141,8 @@ const QuotesList: React.FC = () => {
     }, [user?.token, fetchQuotes]);
 
     const downloadPDF = (quote: any) => {
+        generateQuotePDF(quote);
+        /*
         const getDestinationImage = (destination: string) => {
             const imageMap: { [key: string]: string } = {
                 'Paris': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=400&fit=crop&q=80',
@@ -335,6 +338,7 @@ const QuotesList: React.FC = () => {
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         setTimeout(() => printWindow.print(), 500);
+        */
     };
 
     const handleShare = (quote: any, method: string) => {
