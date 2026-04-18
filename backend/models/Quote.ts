@@ -49,6 +49,24 @@ const quoteSchema = new Schema<IQuote>({
             qty: Number,
             total: Number,
         }],
+        flights: [{
+            airline: String,
+            flightNumber: String,
+            departure: {
+                airport: String,
+                iata: String,
+                at: Date,
+            },
+            arrival: {
+                airport: String,
+                iata: String,
+                at: Date,
+            },
+            duration: String,
+            class: String,
+            baggage: String,
+            price: Number,
+        }],
     },
     costs: {
         net: Number,

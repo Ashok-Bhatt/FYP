@@ -108,10 +108,20 @@ export const broadcastQuoteView = (quoteId: string, timestamp: Date) => {
 //   partnerId: string,
 //   roomTypeName: string,
 //   activities: string[],      // activity names
-//   sightSeeings: string[]     // sightseeing names
+//   sightSeeings: string[],    // sightseeing names
+//   flight?: {                 // optional flight details
+//     id: string,
+//     airline: string,
+//     flightNumber: string,
+//     departure: { airport: string, time: string, date: string },
+//     arrival: { airport: string, time: string, date: string },
+//     duration: string,
+//     price: number,
+//     stops: number
+//   }
 // }
 export const generateQuote = async (req: Request, res: Response) => {
-    const { requirementId, partnerId, roomTypeName, activities, sightSeeings } = req.body;
+    const { requirementId, partnerId, roomTypeName, activities, sightSeeings, flight } = req.body;
 
     try {
         // Validate required fields
@@ -155,6 +165,9 @@ export const generateQuote = async (req: Request, res: Response) => {
         const selectedActivities = findActivitiesByNames(partner, activities || []);
         const selectedSightseeings = findSightseeingsByNames(partner, sightSeeings || []);
 
+        // Calculate flight cost if provided
+        const flightCost = flight ? flight.price * (adults + 0.5 * children) : 0;
+
         // Calculate final cost using new pricing formula
         const costResult = calculateFinalCost({
             roomPrice,
@@ -165,6 +178,10 @@ export const generateQuote = async (req: Request, res: Response) => {
             sightseeings: selectedSightseeings,
             margin: 10, // Default 10% margin
         });
+
+        // Add flight cost to net cost
+        const netCostWithFlight = costResult.netCost + flightCost;
+        const finalCostWithFlight = netCostWithFlight * 1.1; // 10% margin on total
 
         // Build quote sections
         const quoteSections: QuoteSection = {
@@ -177,7 +194,25 @@ export const generateQuote = async (req: Request, res: Response) => {
                 qty: 1,
                 total: costResult.breakdown.hotels,
             }],
-            transport: [], // Can be added later if needed
+            transport: [], // Transport is now for ground transport
+            flights: flight ? [{
+                airline: flight.airline,
+                flightNumber: flight.flightNumber,
+                departure: {
+                    airport: flight.departure.airport,
+                    iata: flight.departure.iata || '',
+                    at: `${flight.departure.date}T${flight.departure.time}`,
+                },
+                arrival: {
+                    airport: flight.arrival.airport,
+                    iata: flight.arrival.iata || '',
+                    at: `${flight.arrival.date}T${flight.arrival.time}`,
+                },
+                duration: flight.duration,
+                class: flight.class || 'ECONOMY',
+                baggage: flight.baggage || 'Checked: 20kg, Cabin: 7kg',
+                price: flight.price,
+            }] : [],
             activities: selectedActivities.map(activity => ({
                 name: activity.name,
                 unitPrice: activity.price,
@@ -194,10 +229,10 @@ export const generateQuote = async (req: Request, res: Response) => {
             title: `${requirement.destination} Trip - ${requirement.tripType}`,
             sections: quoteSections,
             costs: {
-                net: costResult.netCost,
+                net: netCostWithFlight,
                 margin: costResult.margin,
-                final: costResult.finalCost,
-                perHead: costResult.perHead,
+                final: finalCostWithFlight,
+                perHead: finalCostWithFlight / adults,
             },
             status: 'DRAFT',
         });
@@ -209,7 +244,10 @@ export const generateQuote = async (req: Request, res: Response) => {
         res.status(201).json({
             message: 'Quote generated successfully',
             quote,
-            breakdown: costResult.breakdown,
+            breakdown: {
+                ...costResult.breakdown,
+                flight: flightCost,
+            },
         });
     } catch (error: unknown) {
         handleError(res, error, 'Quote generation error');
@@ -670,7 +708,8 @@ export const getQuotesForComparisonByToken = async (req: Request, res: Response)
                 const hotelsCost = quote.sections.hotels?.reduce((sum: number, hotel: any) => sum + (hotel.total || 0), 0) || 0;
                 const transportCost = quote.sections.transport?.reduce((sum: number, transport: any) => sum + (transport.total || 0), 0) || 0;
                 const activitiesCost = quote.sections.activities?.reduce((sum: number, activity: any) => sum + (activity.total || 0), 0) || 0;
-                const otherCost = (quote.costs?.net || 0) - hotelsCost - transportCost - activitiesCost;
+                const flightsCost = (quote.sections as any).flights?.reduce((sum: number, flight: any) => sum + (flight.price * (requirement.pax?.adults + 0.5 * (requirement.pax?.children || 0)) || 0), 0) || 0;
+                const otherCost = (quote.costs?.net || 0) - hotelsCost - transportCost - activitiesCost - flightsCost;
 
                 // Transform hotels
                 const hotels: HotelSummary[] = quote.sections.hotels?.map((hotel: any) => ({

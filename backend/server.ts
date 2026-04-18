@@ -9,6 +9,7 @@ import requirementRoutes from './routes/requirementRoutes';
 import partnerRoutes from './routes/partnerRoutes';
 import quoteRoutes from './routes/quoteRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import flightRoutes from './routes/flightRoutes';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/requirements', requirementRoutes);
 app.use('/api/partners', partnerRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/flights', flightRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

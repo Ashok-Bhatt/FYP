@@ -44,6 +44,10 @@ const requirementSchema = new Schema<IRequirement>({
         phone: { type: String, required: true },
         whatsapp: String,
     },
+    transport: {
+        required: { type: Boolean, default: false },
+        from: { type: String, default: '' },
+    },
     status: {
         type: String,
         enum: ['NEW', 'IN_PROGRESS', 'QUOTES_READY', 'SENT_TO_USER', 'COMPLETED'],

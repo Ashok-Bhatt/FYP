@@ -38,6 +38,10 @@ export interface Requirement {
         phone: string;
         whatsapp?: string;
     };
+    transport?: {
+        required: boolean;
+        from: string;
+    };
     status: 'NEW' | 'IN_PROGRESS' | 'QUOTES_READY' | 'SENT_TO_USER' | 'COMPLETED';
     compareToken?: string;
     compareTokenGenerated?: string | Date;
@@ -54,6 +58,26 @@ export interface ItineraryDay {
     accommodation: string;
     meals: string[];
     tips?: string;
+}
+
+// Flight Types
+export interface Flight {
+    airline: string;
+    flightNumber: string;
+    departure: {
+        airport: string;
+        iata: string;
+        at: string | Date;
+    };
+    arrival: {
+        airport: string;
+        iata: string;
+        at: string | Date;
+    };
+    duration: string;
+    class: string;
+    baggage: string;
+    price: number;
 }
 
 // Quote Types
@@ -79,6 +103,7 @@ export interface QuoteSection {
         qty: number;
         total: number;
     }>;
+    flights: Flight[];
 }
 
 export interface QuoteCosts {
