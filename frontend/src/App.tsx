@@ -14,15 +14,16 @@ const LenisWrapper: React.FC<LenisWrapperProps> = ({ children }) => {
 
     useEffect(() => {
         const shouldDisableLenis = () => {
-            const location = window.location.pathname;
+            const path = location.pathname; // use React Router location, not window.location
             return (
-                location.startsWith('/agent') ||
-                location.startsWith('/partner') ||
-                location.startsWith('/traveler') ||
-                location === '/login' ||
-                location === '/signup' ||
-                location === '/thank-you' ||
-                location.startsWith('/quote/')
+                path.startsWith('/agent') ||
+                path.startsWith('/partner') ||
+                path.startsWith('/traveler') ||
+                path === '/login' ||
+                path === '/signup' ||
+                path === '/plan-journey' ||
+                path === '/thank-you' ||
+                path.startsWith('/quote/')
             );
         };
 

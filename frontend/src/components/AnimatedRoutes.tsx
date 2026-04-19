@@ -48,7 +48,11 @@ const AnimatedRoutes: React.FC = () => {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/plan-journey" element={<PlanJourney />} />
+                <Route path="/plan-journey" element={
+                    <ProtectedRoute role="USER">
+                        <PlanJourney />
+                    </ProtectedRoute>
+                } />
                 <Route path="/thank-you" element={<ThankYou />} />
 
                 {/* Public View */}
