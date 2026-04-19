@@ -183,6 +183,32 @@ export interface PartnerProfile {
     updatedAt?: string | Date;
 }
 
+// Landing Page / Public Types
+export interface DestinationReview {
+    id: number;
+    user: string;
+    comment: string;
+    rating: number;
+}
+
+export interface Destination {
+    id: number;
+    name: string;
+    image: string;
+    category: string;
+    brief: string;
+    description: string;
+    reviews: DestinationReview[];
+    averageRating: number;
+}
+
+export interface DestinationStripItem {
+    id: number;
+    title: string;
+    desc: string;
+    image: string;
+}
+
 // API Error Response
 export interface ApiError {
     message: string;

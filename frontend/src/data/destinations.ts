@@ -1,6 +1,8 @@
+import { Destination, DestinationStripItem } from '../types';
+
 // Destination imagery served from local high-quality assets in /public.
 
-export const destinations = [
+export const destinations: Destination[] = [
     {
         id: 1,
         name: "Kashmir, India",
@@ -115,7 +117,7 @@ export const destinations = [
     }
 ];
 
-export const destinationStripData = [
+export const destinationStripData: DestinationStripItem[] = [
     {
         id: 1,
         title: "Kashmir Snow",

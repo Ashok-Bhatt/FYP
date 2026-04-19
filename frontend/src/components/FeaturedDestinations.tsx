@@ -2,13 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { destinations } from '../data/destinations';
+import { Destination } from '../types';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Interface removed
-
 interface FeaturedDestinationsProps {
-    onSelect: (destination: any) => void; // Using any for now to match usage, ideally strict type
+    onSelect: (destination: Destination) => void;
     selectedId: number | string | null;
 }
 
