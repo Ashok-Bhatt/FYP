@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FaSpinner, FaEdit, FaHotel, FaMapMarkerAlt, FaStar, FaPlus } from 'react-icons/fa';
 import { motion } from 'framer-motion';
@@ -60,7 +59,6 @@ interface PartnerProfileData {
 
 const PartnerProfile: React.FC = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const [profiles, setProfiles] = useState<PartnerProfileData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);

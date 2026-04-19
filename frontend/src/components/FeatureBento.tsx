@@ -41,7 +41,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 1: AI Search (Large) */}
                     <div 
-                        ref={el => tiltNodes.current[0] = el}
+                        ref={el => { tiltNodes.current[0] = el; }}
                         className="md:col-span-2 md:row-span-2 glass-panel rounded-3xl p-10 flex flex-col justify-between relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -66,7 +66,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 2: Instant Quotes */}
                     <div 
-                        ref={el => tiltNodes.current[1] = el}
+                        ref={el => { tiltNodes.current[1] = el; }}
                         className="md:col-span-1 md:row-span-1 glass-panel rounded-3xl p-8 flex flex-col justify-center relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="w-12 h-12 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex items-center justify-center mb-6 text-yellow-500 text-xl group-hover:animate-bounce">
@@ -80,7 +80,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 3: Itineraries */}
                     <div 
-                        ref={el => tiltNodes.current[2] = el}
+                        ref={el => { tiltNodes.current[2] = el; }}
                         className="md:col-span-1 md:row-span-1 glass-panel rounded-3xl p-8 flex flex-col justify-center relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mb-6 text-blue-400 text-xl group-hover:rotate-12 transition-transform">
@@ -94,7 +94,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 4: Export to PDF */}
                     <div 
-                        ref={el => tiltNodes.current[3] = el}
+                        ref={el => { tiltNodes.current[3] = el; }}
                         className="md:col-span-1 md:row-span-1 glass-panel rounded-3xl p-8 flex flex-col justify-center relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center mb-6 text-red-400 text-xl group-hover:scale-110 transition-transform">
@@ -108,7 +108,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 5: Share Links */}
                     <div 
-                        ref={el => tiltNodes.current[4] = el}
+                        ref={el => { tiltNodes.current[4] = el; }}
                         className="md:col-span-1 md:row-span-1 glass-panel rounded-3xl p-8 flex flex-col justify-center relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mb-6 text-purple-400 text-xl group-hover:-rotate-12 transition-transform">
@@ -122,7 +122,7 @@ const FeatureBento: React.FC = () => {
 
                     {/* Card 6: Compare (Wide) */}
                     <div 
-                        ref={el => tiltNodes.current[5] = el}
+                        ref={el => { tiltNodes.current[5] = el; }}
                         className="md:col-span-1 md:row-span-1 glass-panel rounded-3xl p-8 flex flex-col justify-center relative overflow-hidden group glow-border cursor-pointer"
                     >
                         <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mb-6 text-emerald-400 text-xl group-hover:translate-x-2 transition-transform">

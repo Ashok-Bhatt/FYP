@@ -17,16 +17,29 @@ import {
   CartesianGrid,
   Legend
 } from 'recharts';
+interface AnalyticsData {
+  funnel: Record<string, number>;
+  stats: {
+    totalRevenue: number;
+    totalProfit: number;
+    avgQuoteValue: number;
+    count: number;
+  };
+  topDestinations: Array<{ _id: string; revenue: number; profit: number }>;
+  revenueOverTime: Array<{ _id: string; revenue: number; profit: number }>;
+  avgResponseTime: number;
+  viewsCount: number;
+}
 
 const AgentAnalytics = () => {
   const { user } = useAuth();
   const token = user?.token;
 
-  const [analytics, setAnalytics] = useState(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState(30);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -42,7 +55,7 @@ const AgentAnalytics = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setAnalytics(res.data);
-      } catch (err) {
+      } catch (err: any) {
         const msg = err?.response?.data?.message || err?.message || 'Failed to load analytics';
         setError(msg);
       } finally {
@@ -100,7 +113,7 @@ const AgentAnalytics = () => {
   const filteredData = revenueOverTime.filter((item) => {
     const today = new Date();
     const date = new Date(item._id);
-    const diff = (today - date) / (1000 * 60 * 60 * 24);
+    const diff = (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
     return diff <= range;
   });
 
@@ -283,7 +296,7 @@ const AgentAnalytics = () => {
                 <Tooltip 
                     contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px' }}
                     labelStyle={{ color: '#71717a', fontSize: '10px', marginBottom: '4px' }}
-                    formatter={(value: number, name: string) => {
+                    formatter={(value: any, name: any) => {
                         const formattedValue = `₹${Math.round(value).toLocaleString()}`;
                         return [formattedValue, name];
                     }}

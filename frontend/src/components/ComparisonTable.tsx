@@ -54,11 +54,11 @@ const ComparisonTable: React.FC = () => {
     ];
 
     const renderIcon = (value: boolean | string) => {
+        if (value === 'partial') return <FaMinus className="text-yellow-500/80 text-xl" />;
         if (typeof value === 'string') {
             return <span className="font-bold text-white tracking-wide">{value}</span>;
         }
         if (value === true) return <FaCheck className="text-emerald-400 text-xl drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]" />;
-        if (value === 'partial') return <FaMinus className="text-yellow-500/80 text-xl" />;
         return <FaTimes className="text-white/20 text-xl font-light" />;
     };
 

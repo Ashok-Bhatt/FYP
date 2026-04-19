@@ -7,7 +7,6 @@ import {
     FaEye,
     FaDollarSign,
     FaQuoteRight,
-    FaLightbulb,
     FaArrowDown,
     FaMapMarkerAlt,
     FaCalendarAlt
@@ -61,7 +60,6 @@ interface DashboardData {
     recentActivity: RecentActivity[];
     monthlyTrend: MonthlyTrend[];
     mostViewedQuote: MostViewedQuote | null;
-    topDestination: TopDestination | null;
     topDestination: TopDestination | null;
 }
 

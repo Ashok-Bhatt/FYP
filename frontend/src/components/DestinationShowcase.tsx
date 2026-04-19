@@ -12,7 +12,6 @@ const DestinationShowcase: React.FC = () => {
     useEffect(() => {
         if (!containerRef.current || !sliderRef.current) return;
 
-        const cards = gsap.utils.toArray('.destination-card');
         const scrollWidth = sliderRef.current.scrollWidth - window.innerWidth;
 
         // 1. Horizontal Scroll Animation

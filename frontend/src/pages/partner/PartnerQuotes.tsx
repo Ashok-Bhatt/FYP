@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import {
     FaEye,
-    FaDollarSign,
     FaQuoteRight,
     FaMapMarkerAlt,
     FaUsers,

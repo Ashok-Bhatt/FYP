@@ -29,7 +29,7 @@ const HowItWorks: React.FC = () => {
         );
 
         // Animate cards popping in
-        cardsRef.current.forEach((card, i) => {
+        cardsRef.current.forEach((card) => {
             if (!card) return;
             gsap.fromTo(card,
                 { y: 50, opacity: 0, scale: 0.95 },
@@ -100,7 +100,7 @@ const HowItWorks: React.FC = () => {
                                 {/* Content Card */}
                                 <div className={`ml-24 md:ml-0 md:w-1/2 ${step.align === 'left' ? 'md:pr-20' : 'md:pl-20'}`}>
                                     <div 
-                                        ref={el => cardsRef.current[index] = el}
+                                        ref={el => { cardsRef.current[index] = el; }}
                                         className="glass-panel p-8 rounded-2xl glow-border hover:-translate-y-2 transition-transform duration-500"
                                     >
                                         <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">

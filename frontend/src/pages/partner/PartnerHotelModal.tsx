@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { FaSave, FaSpinner, FaCheckCircle, FaHotel, FaPhone, FaMapMarkerAlt, FaStar, FaMoneyBillWave, FaClock, FaTimes, FaPlus, FaImage, FaTrash, FaMap } from 'react-icons/fa';
+import { FaSave, FaSpinner, FaCheckCircle, FaHotel, FaPhone, FaMapMarkerAlt, FaMoneyBillWave, FaClock, FaTimes, FaPlus, FaImage, FaTrash, FaMap } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
 interface PartnerProfileData {

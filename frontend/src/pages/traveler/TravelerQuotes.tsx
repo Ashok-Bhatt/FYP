@@ -6,7 +6,7 @@ import { FaSpinner } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { 
     FaMapMarkerAlt, FaUsers, FaCalendarAlt, FaMoneyBillWave, 
-    FaStar, FaEye, FaShare, FaDownload, FaExternalLinkAlt, FaChevronDown
+    FaEye, FaDownload, FaExternalLinkAlt, FaChevronDown
 } from 'react-icons/fa';
 import { generateItineraryPDF } from '../../utils/generatePDF';
 

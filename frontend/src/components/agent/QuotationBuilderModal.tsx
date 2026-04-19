@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaTimes, FaBed, FaHiking, FaCamera, FaCheck, FaRupeeSign, 
-  FaPlane, FaArrowRight, FaArrowLeft, FaSearch, FaMapMarkerAlt 
+  FaPlane, FaArrowRight, FaArrowLeft 
 } from 'react-icons/fa';
-import axios from 'axios';
-import { useAuth } from '../../context/AuthContext';
 
 interface RoomType {
   name: string;
@@ -104,7 +102,6 @@ const QuotationBuilderModal: React.FC<QuotationBuilderModalProps> = ({
   onGenerateQuote,
   isGenerating = false,
 }) => {
-  const { user } = useAuth();
   
   // Step management
   const [currentStep, setCurrentStep] = useState(STEPS.HOTEL);

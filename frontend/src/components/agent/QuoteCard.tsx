@@ -3,10 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FaEye, FaDownload, FaShareAlt, FaTrashAlt, 
     FaEnvelope, FaWhatsapp, FaInstagram, FaMapMarkerAlt, 
-    FaCalendarAlt, FaUsers, FaHotel, FaWalking 
+    FaCalendarAlt, FaHotel, FaWalking 
 } from 'react-icons/fa';
 
-// ... Props interface remains the same ...
+interface QuoteCardProps {
+    quote: any;
+    shareDropdown: string | null;
+    setShareDropdown: (id: string | null) => void;
+    onView: (id: string) => void;
+    onDownload: (quote: any) => void;
+    onDelete: (id: string) => void;
+    onShare: (quote: any, platform: string) => void;
+    getViewStatusColor: (date: string | null) => string;
+    getViewStatusClasses: (status: string) => { bg: string, text: string, border: string };
+}
 
 const QuoteCard: React.FC<QuoteCardProps> = ({
     quote,
